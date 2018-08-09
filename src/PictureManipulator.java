@@ -2,31 +2,13 @@ interface PictureManipulator {
 
   void loadImage();
 
-  void highlightVertical();
+  // Optional masks parameter
+  void resize();
 
-  void deleteVertical();
+  // Optional masks parameter
+  void resizeReinsert();
 
-  void insertVertical();
-
-  void highlightHorizontal();
-
-  void deleteHorizontal();
-
-  void insertHorizontal();
-
-  void highLightDiagonal();
-
-  void deleteDiagonal();
-
-  void insertDiagonal();
-
-  void applyMask();
-
-  void deleteMask();
-
-  void replaceMask();
-
-  void getImage();
+  void removeMask();
 
   void saveImage();
 }
