@@ -1,6 +1,9 @@
+package seammanipulators;
+
 import java.nio.file.Path;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import masks.Mask;
 
 /**
  * Interface for implementing the operations of image resizing and object deletion with content
