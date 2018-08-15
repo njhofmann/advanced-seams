@@ -1,6 +1,7 @@
 package seamutilities;
 
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.nio.file.Path;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -23,7 +24,7 @@ public interface SeamUtilities {
    * @throws FileNotFoundException if given {@param filePath} does not exist
    * @throws IOException if given {@param filePath} does not have an image, or fails to load image
    */
-  void loadImage(Path filePath) throws IllegalStateException, FileNotFoundException, IOException;
+  void loadImage(Path filePath) throws IllegalArgumentException, IOException, FileNotFoundException;
 
   /**
    * Applies a masks.Mask to the image currently loaded into this SeamUtilities.
