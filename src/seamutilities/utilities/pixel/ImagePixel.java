@@ -55,17 +55,12 @@ public class ImagePixel implements Pixel {
   }
 
   @Override
-  public void computeEnergy() {
-
+  public void assignEnergy(int newEnergy) {
+    this.energy = newEnergy;
   }
 
   @Override
   public int getEnergy() {
     return energy;
-  }
-
-  @Override
-  public boolean isBorderPixel() {
-    return false;
   }
 }

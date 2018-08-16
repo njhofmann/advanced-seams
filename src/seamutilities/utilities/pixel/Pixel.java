@@ -30,21 +30,14 @@ public interface Pixel {
   Color getColor();
 
   /**
-   * Recomputes the energy of this Pixel, usually called whenever its neighboring pixels change.
+   * Assigns a new energy value to this Pixel of this Pixel, usually called whenever its
+   * neighboring pixels change.
    */
-  void computeEnergy();
+  void assignEnergy(int newEnergy);
 
   /**
    * Retrieves this Pixel's last computed energy value.
    * @return this Pixel's current energy value
    */
   int getEnergy();
-
-  /**
-   * Returns if this Pixel is on the border surrounding its associate image - meant as a stand
-   * in for pixels with neighbors on the border of an image.
-   *
-   * @return if this Pixel is a border pixel
-   */
-  boolean isBorderPixel();
 }
