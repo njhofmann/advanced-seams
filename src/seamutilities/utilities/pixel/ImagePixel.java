@@ -23,7 +23,7 @@ public class ImagePixel implements Pixel {
   /**
    * This ImagePixel's current energy - or value in relation to the pixels around it.
    */
-  private int energy = 0;
+  private float energy = 0;
 
   public ImagePixel(Color color, Coordinate coordinate) {
     if (color == null) {
@@ -55,12 +55,12 @@ public class ImagePixel implements Pixel {
   }
 
   @Override
-  public void assignEnergy(int newEnergy) {
+  public void assignEnergy(float newEnergy) {
     this.energy = newEnergy;
   }
 
   @Override
-  public int getEnergy() {
+  public float getEnergy() {
     return energy;
   }
 }

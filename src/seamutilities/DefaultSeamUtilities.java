@@ -28,6 +28,10 @@ public class DefaultSeamUtilities implements SeamUtilities {
 
   private Pixel[][] imageMatrix;
 
+  private int matrixHeight;
+
+  private int matrixWidth;
+
   public DefaultSeamUtilities() {}
 
   /**
@@ -47,6 +51,16 @@ public class DefaultSeamUtilities implements SeamUtilities {
     }
   }
 
+  private Pixel getPixel(int x, int y) {
+    if (!(0 <= x && x <= matrixWidth)) {
+      throw new IllegalArgumentException("Given x coordinate is out of current image's bounds!");
+    }
+    else if (!(0 <= y && y <= matrixHeight)) {
+      throw new IllegalArgumentException("Given y coordinate is out of current image's bounds!");
+    }
+    return imageMatrix[y][x];
+  }
+
   private void imageLoaded() {
     if (imageMatrix == null) {
       throw new IllegalStateException("An image hasn't been loaded yet!");
@@ -56,20 +70,140 @@ public class DefaultSeamUtilities implements SeamUtilities {
   private BufferedImage imageMatrixToBufferImage(int width, int height) {
     imageLoaded();
 
-    if (1 > width || imageMatrix[0].length > width) {
+    if (1 > width || matrixWidth > width) {
       throw new IllegalArgumentException("Given width must be >= the current image's width!");
     }
-    else if (1 > height || imageMatrix.length > height) {
+    else if (1 > height || matrixHeight > height) {
       throw new IllegalArgumentException("Given height must be >= the current image's height!");
     }
 
     BufferedImage toReturn = new BufferedImage(width, height, BufferedImageType);
-    for (int row = 0; row < imageMatrix.length; row += 1) {
-      for (int column = 0; column < imageMatrix[0].length; column += 1) {
-        toReturn.setRGB(column, row, imageMatrix[row][column].getColor().getRGB());
+    for (int row = 0; row < matrixHeight; row += 1) {
+      for (int column = 0; column < matrixWidth; column += 1) {
+        toReturn.setRGB(column, row, getPixel(column, row).getColor().getRGB());
       }
     }
     return toReturn;
+  }
+
+  private void calculateEnergy() {
+    imageLoaded();
+
+    for (int row = 0; row < matrixHeight; row += 1) {
+      for (int column = 0; column < matrixWidth; column += 1) {
+
+        Pixel currentPixel = getPixel(column, row);
+        Color currentColor = currentPixel.getColor();
+
+        Color leftColor;
+        if (column == 0) {
+          leftColor = getPixel(matrixWidth - 1, row).getColor();
+        }
+        else {
+          leftColor = getPixel(column - 1, row).getColor();
+        }
+
+        Color rightColor;
+        if (column == matrixWidth - 1) {
+          rightColor = getPixel(0, row).getColor();
+        }
+        else {
+          rightColor = getPixel(column + 1, row).getColor();
+        }
+
+        Color topColor;
+        if (row == 0) {
+          topColor = getPixel(column, matrixHeight - 1).getColor();
+        }
+        else {
+          topColor = getPixel(column, row - 1).getColor();
+        }
+
+        Color bottomColor;
+        if (row == matrixHeight - 1) {
+          bottomColor = getPixel(column, 0).getColor();
+        }
+        else {
+          bottomColor = getPixel(column, row + 1).getColor();
+        }
+
+        Color topLeftColor;
+        if (column == 0 && row == 0) {
+          topLeftColor = getPixel(matrixWidth - 1, matrixHeight - 1).getColor();
+        }
+        else if (column == 0) {
+          topLeftColor = getPixel(matrixWidth - 1, row - 1).getColor();
+        }
+        else if (row == 0) {
+          topLeftColor = getPixel(column - 1, matrixHeight - 1).getColor();
+        }
+        else {
+          topLeftColor = getPixel(column - 1, row - 1).getColor();
+        }
+
+        Color topRightColor;
+        if (column == matrixWidth - 1 && row == 0) {
+          topRightColor = getPixel(0, matrixHeight - 1).getColor();
+        }
+        else if (column == matrixWidth - 1) {
+          topRightColor = getPixel(0, row - 1).getColor();
+        }
+        else if (row == 0) {
+          topRightColor = getPixel(column + 1, matrixHeight - 1).getColor();
+        }
+        else {
+          topRightColor = getPixel(column + 1, row - 1).getColor();
+        }
+
+        Color bottomLeftColor;
+        if (column == 0 && row == matrixHeight - 1) {
+          bottomLeftColor = getPixel(matrixWidth - 1, 0).getColor();
+        }
+        else if (row == matrixHeight - 1) {
+          bottomLeftColor = getPixel(column - 1, 0).getColor();
+        }
+        else if (column == 0) {
+          bottomLeftColor = getPixel(matrixWidth - 1, row + 1).getColor();
+        }
+        else {
+          bottomLeftColor = getPixel(column - 1, row + 1).getColor();
+        }
+
+        Color bottomRightColor;
+        if (column == matrixWidth - 1 && row == matrixHeight - 1) {
+          bottomRightColor = getPixel(0, 0).getColor();
+        }
+        else if (row == matrixHeight - 1) {
+          bottomRightColor = getPixel(column + 1, 0).getColor();
+        }
+        else if (column == matrixWidth - 1) {
+          bottomRightColor = getPixel(0, row + 1).getColor();
+        }
+        else {
+          bottomRightColor = getPixel(column + 1, row + 1).getColor();
+        }
+
+        Color[] colors = new Color[]{topColor, bottomColor, leftColor, rightColor, topLeftColor,
+            topRightColor, bottomLeftColor, bottomRightColor};
+
+        class ColorDifference {
+          private float compute(Color color) {
+            int red = Math.abs(color.getRed() - currentColor.getRed());
+            int green = Math.abs(color.getGreen() - currentColor.getGreen());
+            int blue = Math.abs(color.getBlue() - currentColor.getBlue());
+            return (float)((red + green + blue) / 3);
+          }
+        }
+
+        ColorDifference colorDifference = new ColorDifference();
+        float finalValue = 0;
+        for (Color color : colors) {
+          finalValue += colorDifference.compute(color);
+        }
+
+        currentPixel.assignEnergy(finalValue / (8 * 255));
+      }
+    }
   }
 
   @Override
@@ -83,6 +217,8 @@ public class DefaultSeamUtilities implements SeamUtilities {
 
     startingHeight = loadedImage.getHeight();
     startingWidth = loadedImage.getWidth();
+    matrixWidth = startingWidth;
+    matrixHeight = startingHeight;
     imageMatrix = new Pixel[startingHeight][startingWidth];
 
     for (int row = 0; row < startingHeight; row += 1) {
@@ -93,6 +229,7 @@ public class DefaultSeamUtilities implements SeamUtilities {
         imageMatrix[row][column] = pixelToAdd;
       }
     }
+    calculateEnergy();
   }
 
   @Override
@@ -108,7 +245,16 @@ public class DefaultSeamUtilities implements SeamUtilities {
 
   @Override
   public BufferedImage getEnergyMap() throws IllegalStateException {
-    return null;
+    imageLoaded();
+
+    BufferedImage toReturn = new BufferedImage(matrixWidth, matrixHeight, BufferedImageType);
+    for (int row = 0; row < matrixHeight; row += 1) {
+      for (int column = 0; column < matrixWidth; column += 1) {
+        float currentPixelEnergy = getPixel(column, row).getEnergy() * 10;
+        toReturn.setRGB(column, row, Color.HSBtoRGB(0, 0, currentPixelEnergy));
+      }
+    }
+    return toReturn;
   }
 
   @Override
@@ -125,7 +271,8 @@ public class DefaultSeamUtilities implements SeamUtilities {
 
   @Override
   public BufferedImage getCurrentImage() throws IllegalStateException {
-    return null;
+    imageLoaded();
+    return imageMatrixToBufferImage(imageMatrix[0].length, imageMatrix.length);
   }
 
   @Override

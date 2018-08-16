@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import javax.imageio.ImageIO;
 import seamutilities.DefaultSeamUtilities;
 import seamutilities.SeamUtilities;
 
@@ -12,10 +13,10 @@ public class RunSeamUtilities {
   public static void main(String[] args) throws IOException {
     Path inputPath = Paths.get("", "resources\\mountains.jpeg").toAbsolutePath();
     Path outputPath = Paths.get("", "resources\\foo.jpeg").toAbsolutePath();
-    System.out.print(outputPath.getParent().toFile().exists());
 
     SeamUtilities seamUtilities = new DefaultSeamUtilities();
     seamUtilities.loadImage(inputPath);
-    seamUtilities.saveCurrentImage(outputPath);
+    //seamUtilities.saveCurrentImage(outputPath);
+    ImageIO.write(seamUtilities.getEnergyMap(), "jpeg", outputPath.toFile());
   }
 }
