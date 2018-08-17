@@ -1,12 +1,11 @@
 package seamutilities;
 
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.nio.file.Path;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import masks.Mask;
-import seamutilities.utilities.EnergyMap;
+import seamutilities.utilities.energymaps.EnergyMap;
 
 /**
  * Interface for implementing basic operations related to content aware image resizing. Be aware
@@ -14,39 +13,6 @@ import seamutilities.utilities.EnergyMap;
  * before any other method or throws an {@code IllegalStateArgument}.
  */
 public interface SeamUtilities {
-
-  /**
-   * Loads the image at the given file path to this SeamUtilities for further editing. Must be
-   * called at least once before calling any other methods in this SeamUtilities.
-   *
-   * @param filePath file path of image to edit
-   * @throws IllegalArgumentException if given {@param filePath} is null
-   * @throws FileNotFoundException if given {@param filePath} does not exist
-   * @throws IOException if given {@param filePath} does not have an image, or fails to load image
-   */
-  void loadImage(Path filePath) throws IllegalArgumentException, IOException, FileNotFoundException;
-
-  /**
-   * Applies a masks.Mask to the image currently loaded into this SeamUtilities.
-   *
-   * @param mask mask to apply to currently loaded image
-   * @throws IllegalArgumentException if given {@param mask} is null
-   * @throws IllegalStateException if this SeamUtilities has not yet has an image loaded into it
-   * @throws IllegalArgumentException if given {@param mask} contains coordinates that are outside
-   *                                  the dimensions of the image currently loaded into this
-   *                                  SeamUtilities
-   */
-  void applyMask(Mask mask)
-      throws IllegalStateException, IOException, IllegalArgumentException;
-
-  /**
-   * Gives a new type of EnergyMap for this SeamUtilities to use when computing the energy map of
-   * any image loaded, overwrites any previously assigned EnergyMaps.
-   *
-   * @param energyMap new EnergyMap for this SeamUtilities
-   * @throws IllegalArgumentException if given {@param energyMap} is null
-   */
-  void assignEnergyMap(EnergyMap energyMap) throws IllegalArgumentException;
 
   /**
    * Returns a BufferedImage of the last computed {@code EnergyMap} of the image last loaded into
