@@ -33,11 +33,11 @@ public interface Pixel {
    * Assigns a new energy value to this Pixel of this Pixel, usually called whenever its
    * neighboring pixels change.
    */
-  void assignEnergy(float newEnergy);
+  void assignEnergy(double newEnergy);
 
   /**
    * Retrieves this Pixel's last computed energy value.
    * @return this Pixel's current energy value
    */
-  float getEnergy();
+  double getEnergy();
 }

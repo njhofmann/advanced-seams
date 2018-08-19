@@ -9,15 +9,13 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import javax.imageio.ImageIO;
+import masks.Mask;
+import seamutilities.utilities.ImageMatrix.DefaultImageMatrix;
 import seamutilities.utilities.ImageMatrix.ImageMatrix;
 import seamutilities.utilities.energymaps.EnergyMap;
 import seamutilities.utilities.pixel.Pixel;
 
 public class DefaultSeamUtilities implements SeamUtilities {
-
-  private int startingWidth = 0;
-
-  private int startingHeight = 0;
 
   private int BufferedImageType = 0;
 
@@ -44,10 +42,13 @@ public class DefaultSeamUtilities implements SeamUtilities {
     previousStates.add(loadedImage);
     BufferedImageType = loadedImage.getType();
 
-    startingHeight = loadedImage.getHeight();
-    startingWidth = loadedImage.getWidth();
-    
+    imageMatrix = new DefaultImageMatrix(loadedImage);
     calculateEnergy();
+  }
+
+  public DefaultSeamUtilities(Path filePath, EnergyMap energyMap, Mask mask) throws IOException{
+    this(filePath, energyMap);
+
   }
 
   /**
@@ -66,7 +67,6 @@ public class DefaultSeamUtilities implements SeamUtilities {
       throw new FileNotFoundException("Given file path does not exist!");
     }
   }
-
 
 
   private BufferedImage imageMatrixToBufferImage(int width, int height) {
@@ -92,14 +92,8 @@ public class DefaultSeamUtilities implements SeamUtilities {
 
   @Override
   public BufferedImage getEnergyMap() throws IllegalStateException {
-    BufferedImage toReturn = new BufferedImage(imageMatrix.getWidth(), imageMatrix.getHeight(), BufferedImageType);
-    for (int row = 0; row < imageMatrix.getHeight(); row += 1) {
-      for (int column = 0; column < imageMatrix.getWidth(); column += 1) {
-        float currentPixelEnergy = imageMatrix.getPixel(column, row).getEnergy() * 10;
-        toReturn.setRGB(column, row, Color.HSBtoRGB(0, 0, currentPixelEnergy));
-      }
-    }
-    return toReturn;
+    energyMap.computeEnergyMap(imageMatrix);
+    return energyMap.outputAsBufferedImage();
   }
 
   @Override

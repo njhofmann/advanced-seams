@@ -20,8 +20,11 @@ public class DefaultImageMatrix implements ImageMatrix {
     if (bufferedImage == null) {
       throw new IllegalArgumentException("Given buffered image can't be null!");
     }
+
     matrixWidth = bufferedImage.getWidth();
     matrixHeight = bufferedImage.getHeight();
+
+    imageMatrix = new Pixel[matrixHeight][matrixWidth];
 
     for (int row = 0; row < matrixHeight; row += 1) {
       for (int column = 0; column < matrixWidth; column += 1) {
