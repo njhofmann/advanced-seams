@@ -1,0 +1,4 @@
+-Documentation
+-Default ImageMatrix iterator
+-Update all for loops related to ImageMatrix to work off of new iterator and Pixels' stored coordinates
+-Separate current energy map into vertical cost matrix, vertical seam, horizontal cost matrix, and horiztonal seam

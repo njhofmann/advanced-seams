@@ -4,16 +4,15 @@ import java.awt.Color;
 import seamutilities.utilities.ImageMatrix.ImageMatrix;
 import seamutilities.utilities.pixel.Pixel;
 
-public class DualGradient extends AbstractEnergyMap implements EnergyMap {
+public class DualGradient implements EnergyMap {
 
   @Override
-  public void computeEnergyMap(ImageMatrix imageMatrix) {
+  public double computeEnergyMap(ImageMatrix imageMatrix) {
     if (imageMatrix == null) {
       throw new IllegalArgumentException("Given image matrix can't be null!");
     }
 
-    this.imageMatrix = imageMatrix;
-    maxEnergy = 0;
+    double maxEnergy = 0;
 
     for (int row = 0; row < imageMatrix.getHeight(); row += 1) {
       for (int column = 0; column < imageMatrix.getWidth(); column += 1) {
@@ -71,5 +70,6 @@ public class DualGradient extends AbstractEnergyMap implements EnergyMap {
         currentPixel.assignEnergy(xEnergy + yEnergy);
       }
     }
+    return maxEnergy;
   }
 }

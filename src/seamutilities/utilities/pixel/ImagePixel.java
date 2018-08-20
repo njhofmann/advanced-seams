@@ -13,7 +13,7 @@ public class ImagePixel implements Pixel {
   /**
    * This ImagePixel's current color - in the sRGB color space.
    */
-  private final Color color;
+  private Color color;
 
   /**
    * This ImagePixel's current coordinate - or its x, y location on its associated image.
@@ -34,6 +34,7 @@ public class ImagePixel implements Pixel {
     }
 
     this.color = color;
+    this.coordinate = coordinate;
   }
 
   @Override
@@ -52,6 +53,15 @@ public class ImagePixel implements Pixel {
   @Override
   public Color getColor() {
     return color;
+  }
+
+  @Override
+  public void assignColor(Color newColor) throws IllegalArgumentException {
+    if (newColor == null) {
+      throw new IllegalArgumentException("Given color can't be null!");
+    }
+
+    this.color = newColor;
   }
 
   @Override

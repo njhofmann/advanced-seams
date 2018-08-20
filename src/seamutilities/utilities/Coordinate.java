@@ -39,7 +39,7 @@ public class Coordinate {
    * @return this Coordinate's x value.
    */
   public int getX() {
-    return this.x;
+    return x;
   }
 
   /**
@@ -47,7 +47,7 @@ public class Coordinate {
    * @return this Coordinate's y value.
    */
   public int getY() {
-    return this.y;
+    return y;
   }
 
   /**

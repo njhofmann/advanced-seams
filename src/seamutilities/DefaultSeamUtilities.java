@@ -23,8 +23,6 @@ public class DefaultSeamUtilities implements SeamUtilities {
 
   private ImageMatrix imageMatrix;
 
-  private final EnergyMap energyMap;
-  
   /**
    *
    * @param filePath
@@ -34,7 +32,6 @@ public class DefaultSeamUtilities implements SeamUtilities {
     if (energyMap == null) {
       throw new IllegalArgumentException("Given energy map can't be null!");
     }
-    this.energyMap = energyMap;
 
     validFilePath(filePath);
 
@@ -42,8 +39,7 @@ public class DefaultSeamUtilities implements SeamUtilities {
     previousStates.add(loadedImage);
     BufferedImageType = loadedImage.getType();
 
-    imageMatrix = new DefaultImageMatrix(loadedImage);
-    calculateEnergy();
+    imageMatrix = new DefaultImageMatrix(loadedImage, energyMap);
   }
 
   public DefaultSeamUtilities(Path filePath, EnergyMap energyMap, Mask mask) throws IOException{
@@ -86,14 +82,9 @@ public class DefaultSeamUtilities implements SeamUtilities {
     return toReturn;
   }
 
-  private void calculateEnergy() {
-    energyMap.computeEnergyMap(imageMatrix);
-  }
-
   @Override
   public BufferedImage getEnergyMap() throws IllegalStateException {
-    energyMap.computeEnergyMap(imageMatrix);
-    return energyMap.outputAsBufferedImage();
+    return imageMatrix.getEnergyMap();
   }
 
   @Override

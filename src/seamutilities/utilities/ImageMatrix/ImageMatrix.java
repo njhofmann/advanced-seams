@@ -13,4 +13,6 @@ public interface ImageMatrix extends Iterable<Pixel> {
 
   BufferedImage toBufferedImage();
 
+  BufferedImage getEnergyMap();
+
 }

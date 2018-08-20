@@ -5,17 +5,16 @@ import java.awt.image.BufferedImage;
 import seamutilities.utilities.ImageMatrix.ImageMatrix;
 import seamutilities.utilities.pixel.Pixel;
 
-public class AverageSurroundingGradient extends AbstractEnergyMap implements EnergyMap{
+public class AverageSurroundingGradient implements EnergyMap{
 
 
   @Override
-  public void computeEnergyMap(ImageMatrix imageMatrix) {
+  public double computeEnergyMap(ImageMatrix imageMatrix) {
     if (imageMatrix == null) {
       throw new IllegalArgumentException("Given image matrix can't be null!");
     }
 
-    this.imageMatrix = imageMatrix;
-    maxEnergy = 0;
+    double maxEnergy = 0;
 
     for (int row = 0; row < imageMatrix.getHeight(); row += 1) {
       for (int column = 0; column < imageMatrix.getWidth(); column += 1) {
@@ -124,12 +123,12 @@ public class AverageSurroundingGradient extends AbstractEnergyMap implements Ene
         }
 
         ColorDifference colorDifference = new ColorDifference();
-        float finalValue = 0;
+        double finalValue = 0;
         for (Color color : colors) {
           finalValue += colorDifference.compute(color);
         }
 
-        float finalEnergy = finalValue / 8;
+        double finalEnergy = finalValue / 8;
 
         if (finalEnergy > maxEnergy) {
           maxEnergy = finalEnergy;
@@ -138,5 +137,6 @@ public class AverageSurroundingGradient extends AbstractEnergyMap implements Ene
         currentPixel.assignEnergy(finalEnergy);
       }
     }
+    return maxEnergy;
   }
 }

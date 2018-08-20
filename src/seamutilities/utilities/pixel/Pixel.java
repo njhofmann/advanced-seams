@@ -21,13 +21,21 @@ public interface Pixel {
    * @param newCoordinate new Coordinate to assign to this Pixel
    * @throws IllegalArgumentException if given new Coordinate is null
    */
-  void setCoordinate(Coordinate newCoordinate);
+  void setCoordinate(Coordinate newCoordinate) throws IllegalArgumentException;
 
   /**
    * Retrieves the current color of this Pixel.
    * @return current color of this Pixel
    */
   Color getColor();
+
+  /**
+   * Assigns the given Color to this Pixel.
+   *
+   * @param newColor
+   * @throws IllegalArgumentException if given Color is null
+   */
+  void assignColor(Color newColor) throws IllegalArgumentException;
 
   /**
    * Assigns a new energy value to this Pixel of this Pixel, usually called whenever its

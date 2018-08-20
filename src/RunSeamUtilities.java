@@ -15,12 +15,12 @@ public class RunSeamUtilities {
 
   public static void main(String[] args) throws IOException {
     Path inputPath = Paths.get("", "resources\\beach.jpg").toAbsolutePath();
-    Path outputPath = Paths.get("", "resources\\dualgradient.jpeg").toAbsolutePath();
-    EnergyMap energyMap = new DualGradient();
+    Path outputPath = Paths.get("", "resources\\output.jpeg").toAbsolutePath();
+    EnergyMap energyMap = new AverageSurroundingGradient();
 
 
     SeamUtilities seamUtilities = new DefaultSeamUtilities(inputPath, energyMap);
-    //seamUtilities.saveCurrentImage(outputPath);
-    ImageIO.write(seamUtilities.getEnergyMap(), "jpeg", outputPath.toFile());
+    seamUtilities.saveCurrentImage(outputPath);
+    //ImageIO.write(seamUtilities.getEnergyMap(), "jpeg", outputPath.toFile());
   }
 }
