@@ -3,13 +3,21 @@ package seamutilities.utilities.seams;
 import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
-import seamutilities.SeamUtilities;
 import seamutilities.utilities.pixel.Pixel;
 
+/**
+ * Default Seam implementation to use when using a Seam.
+ */
 public class DefaultSeam implements Seam {
 
+  /**
+   * The Pixels associated with this Seam, all Pixels that have so far been added to this Seam.
+   */
   private final List<Pixel> pixels = new ArrayList<>();
 
+  /**
+   * The cumulative energy of this Seam so far, updated whenever a new Pixel is added.
+   */
   private double energy = 0;
 
   @Override

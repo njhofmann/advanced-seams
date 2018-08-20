@@ -5,7 +5,8 @@ import java.util.List;
 import seamutilities.utilities.pixel.Pixel;
 
 /**
- * A horizontal or vertical collection of Pixels on an image.
+ * A horizontal or vertical collection of Pixels on an image, from top to bottom or from left to
+ * right.
  */
 public interface Seam {
 

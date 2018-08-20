@@ -1,12 +1,14 @@
 package seamutilities.utilities.energymaps;
 
 import java.awt.Color;
-import java.awt.image.BufferedImage;
 import seamutilities.utilities.ImageMatrix.ImageMatrix;
 import seamutilities.utilities.pixel.Pixel;
 
+/**
+ * EnergyMap that for each Pixel in a given ImageMatrix, assigns its Energy based on the average
+ * color difference of its 8 surrounding Pixel's colors and its own color.
+ */
 public class AverageSurroundingGradient implements EnergyMap{
-
 
   @Override
   public double computeEnergyMap(ImageMatrix imageMatrix) {

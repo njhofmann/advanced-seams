@@ -32,7 +32,7 @@ public interface Pixel {
   /**
    * Assigns the given Color to this Pixel.
    *
-   * @param newColor
+   * @param newColor new Color to assign this Pixel
    * @throws IllegalArgumentException if given Color is null
    */
   void assignColor(Color newColor) throws IllegalArgumentException;

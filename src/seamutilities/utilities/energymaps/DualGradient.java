@@ -4,6 +4,11 @@ import java.awt.Color;
 import seamutilities.utilities.ImageMatrix.ImageMatrix;
 import seamutilities.utilities.pixel.Pixel;
 
+/**
+ * EnergyMap that for each Pixel in a given ImageMatrix, assigns its Energy based on the squared
+ * sum of the squared absolute difference of its upper and lower neighboring Pixels' colors, as
+ * well the squared absolute difference of its left and right neighboring Pixel's colors.
+ */
 public class DualGradient implements EnergyMap {
 
   @Override

@@ -6,12 +6,12 @@ package seamutilities.utilities;
 public class Coordinate {
 
   /**
-   * x value of this Coordinate.
+   * X value of this Coordinate.
    */
   private final int x;
 
   /**
-   * y value of this Coordinate.
+   * Y value of this Coordinate.
    */
   private final int y;
 
