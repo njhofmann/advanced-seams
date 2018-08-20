@@ -4,8 +4,7 @@ import java.awt.image.BufferedImage;
 import java.nio.file.Path;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import masks.Mask;
-import seamutilities.utilities.energymaps.EnergyMap;
+
 
 /**
  * Interface for implementing basic operations related to content aware image resizing. Be aware
@@ -19,9 +18,10 @@ public interface SeamUtilities {
    * this SeamUtilities.
    *
    * @return last computed {@code EnergyMap} of last loaded image
-   * @throws IllegalStateException if this SeamUtilities has not yet has an image loaded into it
    */
   BufferedImage getEnergyMap() throws IllegalStateException;
+
+  BufferedImage getCostMatrix();
 
   /**
    * Saves the last loaded image in its latest state (after any edits have been made to it) to the
