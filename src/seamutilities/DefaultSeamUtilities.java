@@ -7,16 +7,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import javax.imageio.ImageIO;
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane.SystemMenuBar;
 import org.jcodec.api.awt.AWTSequenceEncoder;
 import org.jcodec.common.io.NIOUtils;
 import org.jcodec.common.io.SeekableByteChannel;
 import org.jcodec.common.model.Rational;
 import seamutilities.utilities.Coordinate;
-import seamutilities.utilities.energymaps.EnergyMapMaker;
+import energymaps.EnergyMapMaker;
 
 public class DefaultSeamUtilities implements SeamUtilities {
 
@@ -139,7 +137,8 @@ public class DefaultSeamUtilities implements SeamUtilities {
         double upperLeftCostMatrixEnergy = getCostMatrixEnergy(column - 1, row - 1);
         double upperRightCostMatrixEnergy = getCostMatrixEnergy(column + 1, row - 1);
 
-        double energyToAdd = Math.min(upperLeftCostMatrixEnergy, Math.min(upperCenterCostMatrixEnergy, upperRightCostMatrixEnergy));
+        double energyToAdd = Math.min(upperLeftCostMatrixEnergy,
+            Math.min(upperCenterCostMatrixEnergy, upperRightCostMatrixEnergy));
         double currentEnergy = getEnergy(column, row);
         double finalEnergy = currentEnergy + energyToAdd;
         costMatrix[row][column] = finalEnergy;
@@ -299,22 +298,22 @@ public class DefaultSeamUtilities implements SeamUtilities {
     SeekableByteChannel out = null;
     try {
       out = NIOUtils.writableFileChannel(filePath.toString());
-      // for Android use: AndroidSequenceEncoder
       AWTSequenceEncoder encoder = new AWTSequenceEncoder(out, Rational.R(25, 1));
       for (BufferedImage bufferedImage : previousStates) {
-        bufferedImage = toEvenSidedImage(bufferedImage, 640, 460);
+        bufferedImage = toEvenSidedImage(bufferedImage, 676, 396);
         // Encode the image
         encoder.encodeImage(bufferedImage);
       }
       // Finalize the encoding, i.e. clear the buffers, write the header, etc.
       encoder.finish();
-    } finally {
+    }
+    finally {
       NIOUtils.closeQuietly(out);
     }
   }
 
   private void computeEnergyMap() {
-    energyMap = energyMapMaker.computeEnergyMap(currentBufferedImage);
+    //energyMap = energyMapMaker.computeEnergyMap(currentBufferedImage);
   }
 
   private BufferedImage toEvenSidedImage(BufferedImage toConvert, int x, int y) {
