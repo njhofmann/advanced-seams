@@ -8,4 +8,6 @@ public interface Seam {
 
   void remove();
 
+  double getAverageEnergy();
+
 }

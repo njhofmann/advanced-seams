@@ -4,11 +4,13 @@ import java.awt.Color;
 
 public class ImagePixel implements Pixel{
 
-  protected Color color;
+  private Color color;
 
-  protected double energyMapEnergy = 0;
+  private boolean isMask =  false;
 
-  protected double costMatrixEnergy = 0;
+  private double energyMapEnergy = 0;
+
+  private double costMatrixEnergy = 0;
 
   private Pixel leftPixel = new BorderPixel();
 
@@ -25,6 +27,14 @@ public class ImagePixel implements Pixel{
   private void checkPixelNull(Pixel toCheck) {
     if (toCheck == null) {
       throw new IllegalArgumentException("Given pixel can't be null!");
+    }
+  }
+
+  @Override
+  public void makeMask(double maskValue) {
+    if (!isMask) {
+      isMask = true;
+      energyMapEnergy = maskValue;
     }
   }
 
@@ -53,7 +63,9 @@ public class ImagePixel implements Pixel{
 
   @Override
   public void setEnergyMapEnergy(double energyMapEnergy) {
-    this.energyMapEnergy = energyMapEnergy;
+    if (!isMask) {
+      this.energyMapEnergy = energyMapEnergy;
+    }
   }
 
   @Override

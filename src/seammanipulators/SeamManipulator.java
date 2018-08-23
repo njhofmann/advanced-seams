@@ -14,9 +14,9 @@ import masks.Mask;
  */
 public interface SeamManipulator {
 
-  void resize(int newX, int newY);
+  void resize(int newWidth, int newHeight);
 
-  void resize(int newX, int newY, Mask areaToProtect);
+  void resize(int newWidth, int newHeight, Mask areaToProtect);
 
   void removeArea(Mask areaToRemove);
 

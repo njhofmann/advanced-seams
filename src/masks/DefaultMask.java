@@ -2,19 +2,25 @@ package masks;
 
 import java.awt.Color;
 import java.awt.image.BufferedImage;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import javax.imageio.ImageIO;
-import seamutilities.utilities.Coordinate;
 
 /**
  * The default Mask to use when making Masks.
  */
 public class DefaultMask implements Mask {
+
+  private final int maxX;
+
+  private final int minX;
+
+  private final int maxY;
+
+  private final int minY;
 
   /**
    * The array of Coordinates this Mask contains.
@@ -48,6 +54,11 @@ public class DefaultMask implements Mask {
           + "less than the given lower right y coordinate!");
     }
 
+    maxX = lowerRightX;
+    minX = upperLeftX;
+    maxY = lowerRightY;
+    minY = upperLeftY;
+
     int xDist = lowerRightX - upperLeftX + 1;
     int yDist = lowerRightY - upperLeftY + 1;
 
@@ -62,6 +73,7 @@ public class DefaultMask implements Mask {
     }
   }
 
+  /*
   /**
    * Constructor for this DefaultMask that a takes in a file path for an image consisting of only
    * white - or pixels with colors (255, 255, 255) in the sRGB color space. Assigns all white
@@ -70,7 +82,7 @@ public class DefaultMask implements Mask {
    * @param maskPath
    * @throws IllegalArgumentException if given {@param maskPath} is null or doesn't exist
    * @throws IOException if the path to the given image can't be read.
-   */
+
   public DefaultMask(Path maskPath) {
     if (maskPath == null) {
       throw new IllegalArgumentException("Given path can't be null!");
@@ -102,9 +114,26 @@ public class DefaultMask implements Mask {
       e.printStackTrace();
     }
   }
+  */
 
   @Override
   public Coordinate[] getCoordinates() {
     return coordinates;
+  }
+
+  public int getMaxX() {
+    return maxX;
+  }
+
+  public int getMinX() {
+    return minX;
+  }
+
+  public int getMaxY() {
+    return maxY;
+  }
+
+  public int getMinY() {
+    return minY;
   }
 }

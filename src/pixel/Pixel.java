@@ -3,7 +3,10 @@ package pixel;
 import java.awt.Color;
 
 public interface Pixel {
-   Color getColor();
+
+  void makeMask(double maskValue);
+
+  Color getColor();
 
   boolean isBorderPixel();
 

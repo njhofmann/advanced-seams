@@ -1,9 +1,4 @@
--Implement normal and forward cost matricies for horizontal seam removal
--Update documentation
--Change seam manipulators to have public methods resize, resize with mask (protection), delete object
-(mask), and replace object (mask)
--Look into how to implement diagonal seam removal
--Update seam recorder to work with generalized size
--Seam recorder to get around memory heap issue - add another constructor with optional write-to path,
-write to created path as images as generated - save files on disk, load when saving, then delete after using
--Add minimum size contraints
+-Get forward energy algorithms to work
+-Implement mask removal
+-Implement image -> mask
+-Implement seam insertion

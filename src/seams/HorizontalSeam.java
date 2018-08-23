@@ -19,7 +19,7 @@ public class HorizontalSeam extends AbstractSeam implements Seam {
       if (i < pixels.size() - 1) {
         Pixel nextPixel = pixels.get(i + 1);
         Pixel rightPixel = currentPixel.getRightPixel();
-        if (nextPixel.equals(currentPixel.getUpperLeftPixel())) {
+        if (nextPixel.equals(currentPixel.getUpperRightPixel())) {
           rightPixel.setLeftPixel(abovePixel);
           abovePixel.setRightPixel(rightPixel);
         }

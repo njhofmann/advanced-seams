@@ -8,6 +8,11 @@ public class BorderPixel implements Pixel {
       = new UnsupportedOperationException("Can't change the parameters of a border pixel!");
 
   @Override
+  public void makeMask(double maskValue) {
+
+  }
+
+  @Override
   public Color getColor() {
     return Color.BLACK;
   }

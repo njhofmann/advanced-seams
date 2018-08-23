@@ -1,7 +1,5 @@
 package masks;
 
-import seamutilities.utilities.Coordinate;
-
 /**
  * Represents a series of coordinates to "mask" upon a given image, usually to be targeted for some
  * purpose irrelevant to this Mask - likely object protection or deletion by a content aware
@@ -14,4 +12,12 @@ public interface Mask {
    * @return array of all coordinates
    */
   Coordinate[] getCoordinates();
+
+  int getMaxX();
+
+  int getMinX();
+
+  int getMaxY();
+
+  int getMinY();
 }

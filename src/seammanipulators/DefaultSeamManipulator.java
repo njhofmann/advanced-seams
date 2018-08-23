@@ -2,19 +2,21 @@ package seammanipulators;
 
 import costmatricies.HorizontalCostMatrix;
 import costmatricies.HorizontalEnergy;
+import costmatricies.HorizontalForwardEnergy;
 import costmatricies.VerticalCostMatrix;
 import costmatricies.VerticalEnergy;
+import costmatricies.VerticalForwardEnergy;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
+import java.util.Iterator;
 import java.util.List;
 import javax.imageio.ImageIO;
+import masks.Coordinate;
 import masks.Mask;
 import org.jcodec.api.awt.AWTSequenceEncoder;
 import org.jcodec.common.io.NIOUtils;
@@ -31,15 +33,12 @@ import pixel.iterators.RowIterator;
 import seams.HorizontalSeam;
 import seams.Seam;
 import seams.VerticalSeam;
-import seamutilities.utilities.Coordinate;
 
-public class DefaultSeamManipulator implements SeamManipulator {
+public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> {
+
+  private static final int maskValue = 255;
 
   List<BufferedImage> previousStates = new ArrayList<>();
-
-  private final int startingWidth;
-
-  private final int startingHeight;
 
   private Pixel upperLeftCorner;
 
@@ -69,20 +68,6 @@ public class DefaultSeamManipulator implements SeamManipulator {
     imageWidth = loadedImage.getWidth();
     imageHeight = loadedImage.getHeight();
 
-    if (imageWidth % 2 == 1) {
-      startingWidth = imageWidth + 1;
-    }
-    else {
-      startingWidth = imageWidth;
-    }
-
-    if (imageHeight % 2 == 1) {
-      startingHeight = imageHeight + 1;
-    }
-    else {
-      startingHeight = imageHeight;
-    }
-
     Pixel[][] tempImageArray = new Pixel[imageHeight][imageWidth];
     for (int row = 0; row < imageHeight; row += 1) {
       for (int column = 0; column < imageWidth; column += 1) {
@@ -93,28 +78,12 @@ public class DefaultSeamManipulator implements SeamManipulator {
           Pixel abovePixel = tempImageArray[row - 1][column];
           abovePixel.setBelowPixel(currentPixel);
           currentPixel.setAbovePixel(abovePixel);
-
-          /**
-          if (column != imageWidth - 1) {
-            Pixel upperRight = tempImageArray[row - 1][column + 1];
-            upperRight.setLowerLeftPixel(currentPixel);
-            currentPixel.setUpperRightPixel(upperRight);
-          }
-           **/
         }
 
         if (column != 0) {
           Pixel leftPixel = tempImageArray[row][column - 1];
           leftPixel.setRightPixel(currentPixel);
           currentPixel.setLeftPixel(leftPixel);
-
-          /**
-          if (row != 0) {
-            Pixel upperLeft = tempImageArray[row - 1][column - 1];
-            upperLeft.setLowerRightPixel(currentPixel);
-            currentPixel.setUpperLeftPixel(upperLeft);
-          }
-           **/
         }
       }
     }
@@ -139,6 +108,46 @@ public class DefaultSeamManipulator implements SeamManipulator {
     }
   }
 
+  private Pixel getPixel(int x, int y) {
+    if (x < 0 || x >= imageWidth) {
+      throw new IllegalArgumentException("Given x coordinate must be in the bounds of the image!");
+    }
+    else if (y < 0 || y >= imageHeight) {
+      throw new IllegalArgumentException("Given y coordinate must be in the bounds of the image!");
+    }
+
+    Pixel pixelTopColumn = new BorderPixel();
+    RowIterator rowIterator = new RowIterator(upperLeftCorner);
+    while (x >= 0) {
+      pixelTopColumn = rowIterator.next();
+      x -= 1;
+    }
+
+    Pixel toReturn = new BorderPixel();
+    ColumnIterator columnIterator = new ColumnIterator(pixelTopColumn);
+    while (y >= 0) {
+      toReturn = columnIterator.next();
+      y -= 1;
+    }
+
+    return toReturn;
+  }
+
+  private void applyMask(Mask maskToApply, double valueToApply) {
+    if (maskToApply == null) {
+      throw new IllegalArgumentException("Given mask can't be null!");
+    }
+    Coordinate[] coordinates = maskToApply.getCoordinates();
+
+    for (Coordinate coordinate : coordinates) {
+      int currentX = coordinate.getX();
+      int currentY = coordinate.getY();
+
+      Pixel toChange = getPixel(currentX, currentY);
+      toChange.makeMask(valueToApply);
+    }
+  }
+
   private void computeEnergyMap() {
     maxEnergyMapEnergy = 0;
     RowColumnIterator rowColumnIterator = new RowColumnIterator(upperLeftCorner);
@@ -151,83 +160,13 @@ public class DefaultSeamManipulator implements SeamManipulator {
     }
   }
 
-  @Override
-  public void resize(int newX, int newY) {
-    int xDiff = imageWidth - newX;
-    int yDiff = imageHeight - newY;
-    for (int i = 0; i < yDiff; i += 1) {
-      computeHorizontalCostMatrix(new HorizontalEnergy());
-      findMinimumHorizontalSeam();
-      previousStates.add(colorsToBufferedImageHorizontal());
-      computeEnergyMap();
-    }
-  }
-
-  @Override
-  public void resize(int newX, int newY, Mask areaToProtect) {
-
-  }
-
-  @Override
-  public void removeArea(Mask areaToRemove) {
-
-  }
-
-  @Override
-  public void replaceArea(Mask areaToRemove) {
-
-  }
-
-  private BufferedImage colorsToBufferedImage() {
-    RowColumnIterator rowColumnIterator = new RowColumnIterator(upperLeftCorner);
-    BufferedImage toReturn = new BufferedImage(imageWidth, imageHeight, BufferedImageType);
-    while (rowColumnIterator.hasNext()) {
-      int x = rowColumnIterator.getX();
-      int y = rowColumnIterator.getY();
-      Color currentColor = rowColumnIterator.next().getColor();
-      //System.out.print(Integer.toString(x) + ", " + Integer.toString(y) + "\n");
-      toReturn.setRGB(x, y, currentColor.getRGB());
-    }
-    return toReturn;
-  }
-
-  private BufferedImage colorsToBufferedImageHorizontal() {
-    ColumnRowIterator columnRowIterator = new ColumnRowIterator(upperLeftCorner);
-    BufferedImage toReturn = new BufferedImage(imageWidth, imageHeight, BufferedImageType);
-    while (columnRowIterator.hasNext()) {
-      int x = columnRowIterator.getX();
-      int y = columnRowIterator.getY();
-      Color currentColor = columnRowIterator.next().getColor();
-      //System.out.print(Integer.toString(x) + ", " + Integer.toString(y) + "\n");
-      toReturn.setRGB(x, y, currentColor.getRGB());
-    }
-    return toReturn;
-  }
-
-  @Override
-  public BufferedImage getCurrentImage() {
-    return colorsToBufferedImage();
-  }
-
-  @Override
-  public BufferedImage getCurrentEnergyMap() {
-    RowColumnIterator rowColumnIterator = new RowColumnIterator(upperLeftCorner);
-    BufferedImage toReturn = new BufferedImage(imageWidth, imageHeight, BufferedImageType);
-    while (rowColumnIterator.hasNext()) {
-      double currentEnergy = rowColumnIterator.next().getEnergyMapEnergy();
-      toReturn.setRGB(rowColumnIterator.getX(), rowColumnIterator.getY(),
-          Color.HSBtoRGB(0, 0, (float)(currentEnergy / maxEnergyMapEnergy)));
-    }
-    return toReturn;
-  }
-
   private void computeVerticalCostMatrix(VerticalCostMatrix costMatrix) {
     maxCostMatrixEnergy = 0;
     RowColumnIterator rowColumnIterator = new RowColumnIterator(upperLeftCorner);
     while (rowColumnIterator.hasNext()) {
+      int currentY = rowColumnIterator.getY();
       Pixel currentPixel = rowColumnIterator.next();
-
-      if (rowColumnIterator.getY() == 0) {
+      if (currentY == 0) {
         currentPixel.setCostMatrixEnergy(currentPixel.getEnergyMapEnergy());
       }
       else {
@@ -240,26 +179,9 @@ public class DefaultSeamManipulator implements SeamManipulator {
     }
   }
 
-  private void computeHorizontalCostMatrix(HorizontalCostMatrix costMatrix) {
-    maxCostMatrixEnergy = 0;
-    ColumnRowIterator columnRowIterator = new ColumnRowIterator(upperLeftCorner);
-    while (columnRowIterator.hasNext()) {
-      Pixel currentPixel = columnRowIterator.next();
+  private Seam findMinimumVerticalSeam() {
+    computeVerticalCostMatrix(new VerticalEnergy());
 
-      if (columnRowIterator.getX() == 0) {
-        currentPixel.setCostMatrixEnergy(currentPixel.getEnergyMapEnergy());
-      }
-      else {
-        costMatrix.compute(currentPixel);
-      }
-
-      if (currentPixel.getCostMatrixEnergy() > maxCostMatrixEnergy) {
-        maxCostMatrixEnergy = currentPixel.getCostMatrixEnergy();
-      }
-    }
-  }
-
-  private void findMinimumVerticalSeam() {
     ColumnIterator columnIterator = new ColumnIterator(upperLeftCorner);
     Pixel lowerRightCorner = new BorderPixel();
     while (columnIterator.hasNext()) {
@@ -300,11 +222,31 @@ public class DefaultSeamManipulator implements SeamManipulator {
       }
       seam.add(currentStartingPixel);
     }
-    seam.remove();
-    imageWidth -= 1;
+    return seam;
   }
 
-  private void findMinimumHorizontalSeam() {
+  private void computeHorizontalCostMatrix(HorizontalCostMatrix costMatrix) {
+    maxCostMatrixEnergy = 0;
+    ColumnRowIterator columnRowIterator = new ColumnRowIterator(upperLeftCorner);
+    while (columnRowIterator.hasNext()) {
+      int currentX = columnRowIterator.getX();
+      Pixel currentPixel = columnRowIterator.next();
+      if (currentX == 0) {
+        currentPixel.setCostMatrixEnergy(currentPixel.getEnergyMapEnergy());
+      }
+      else {
+        costMatrix.compute(currentPixel);
+      }
+
+      if (currentPixel.getCostMatrixEnergy() > maxCostMatrixEnergy) {
+        maxCostMatrixEnergy = currentPixel.getCostMatrixEnergy();
+      }
+    }
+  }
+
+  private Seam findMinimumHorizontalSeam() {
+    computeHorizontalCostMatrix(new HorizontalEnergy());
+
     RowIterator rowIterator = new RowIterator(upperLeftCorner);
     Pixel upperRightCorner = new BorderPixel();
     while (rowIterator.hasNext()) {
@@ -345,12 +287,97 @@ public class DefaultSeamManipulator implements SeamManipulator {
       }
       seam.add(currentStartingPixel);
     }
-    seam.remove();
-    imageHeight -= 1;
+    return seam;
+  }
+
+  @Override
+  public void resize(int newWidth, int newHeight) {
+    if (newWidth < 3) {
+      throw new IllegalArgumentException("Given new width can't be less than 1 pixel");
+    }
+    else if (newHeight < 3) {
+      throw new IllegalArgumentException("Given new width can't be less than 1 pixel");
+    }
+
+    while (imageWidth != newWidth && imageHeight != newHeight) {
+      computeEnergyMap();
+      Seam verticalSeam = findMinimumVerticalSeam();
+      Seam horizontalSeam = findMinimumHorizontalSeam();
+
+      if (imageWidth != newWidth && imageHeight != newHeight) {
+        if (verticalSeam.getAverageEnergy() < horizontalSeam.getAverageEnergy()) {
+          verticalSeam.remove();
+          imageWidth -= 1;
+        }
+        else {
+          horizontalSeam.remove();
+          imageHeight -= 1;
+        }
+      }
+      else if (imageWidth != newWidth) {
+        verticalSeam.remove();
+        imageWidth -= 1;
+      }
+      else if (imageHeight != newHeight) {
+        horizontalSeam.remove();
+        imageHeight -= 1;
+      }
+      previousStates.add(getCurrentImage());
+    }
+  }
+
+  @Override
+  public void resize(int newWidth, int newHeight, Mask areaToProtect) {
+    applyMask(areaToProtect, DefaultSeamManipulator.maskValue);
+    resize(newWidth, newHeight);
+  }
+
+  @Override
+  public void removeArea(Mask areaToRemove) {
+    applyMask(areaToRemove, DefaultSeamManipulator.maskValue);
+  }
+
+  @Override
+  public void replaceArea(Mask areaToRemove) {
+
+  }
+
+  @Override
+  public BufferedImage getCurrentImage() {
+    RowColumnIterator rowColumnIterator = new RowColumnIterator(upperLeftCorner);
+    BufferedImage toReturn = new BufferedImage(imageWidth, imageHeight, BufferedImageType);
+    while (rowColumnIterator.hasNext()) {
+      int x = rowColumnIterator.getX();
+      int y = rowColumnIterator.getY();
+      Color currentColor = rowColumnIterator.next().getColor();
+      toReturn.setRGB(x, y, currentColor.getRGB());
+    }
+    return toReturn;
+  }
+
+  @Override
+  public BufferedImage getCurrentEnergyMap() {
+    computeEnergyMap();
+    RowColumnIterator rowColumnIterator = new RowColumnIterator(upperLeftCorner);
+    BufferedImage toReturn = new BufferedImage(imageWidth, imageHeight, BufferedImageType);
+    while (rowColumnIterator.hasNext()) {
+      int x = rowColumnIterator.getX();
+      int y = rowColumnIterator.getY();
+      double currentEnergy = rowColumnIterator.next().getEnergyMapEnergy();
+
+      if (currentEnergy < 0) {
+        currentEnergy = 0;
+      }
+
+      toReturn.setRGB(x, y,
+          Color.HSBtoRGB(0, 0, (float)(currentEnergy / maxEnergyMapEnergy)));
+    }
+    return toReturn;
   }
 
   @Override
   public BufferedImage getCurrentCostMatrix() {
+    computeEnergyMap();
     computeHorizontalCostMatrix(new HorizontalEnergy());
     RowColumnIterator rowColumnIterator = new RowColumnIterator(upperLeftCorner);
     BufferedImage toReturn = new BufferedImage(imageWidth, imageHeight, BufferedImageType);
@@ -358,6 +385,11 @@ public class DefaultSeamManipulator implements SeamManipulator {
       int x = rowColumnIterator.getX();
       int y = rowColumnIterator.getY();
       double currentEnergy = rowColumnIterator.next().getCostMatrixEnergy();
+
+      if (currentEnergy < 0) {
+        currentEnergy = 0;
+      }
+
       toReturn.setRGB(x, y,
           Color.HSBtoRGB(0, 0, (float)(currentEnergy / maxCostMatrixEnergy)));
     }
@@ -367,22 +399,15 @@ public class DefaultSeamManipulator implements SeamManipulator {
   @Override
   public void saveCurrentImage(Path filePath) throws IOException {
     validFilePath(filePath.getParent());
-    ImageIO.write(colorsToBufferedImage(), "jpeg", filePath.toFile());
-
+    ImageIO.write(getCurrentImage(), "jpeg", filePath.toFile());
   }
 
-  private BufferedImage toEvenSidedImage(BufferedImage toConvert, int x, int y) {
+  private BufferedImage placeOnLargerImage(BufferedImage toConvert, int x, int y) {
     if (!(0 < x && x >= toConvert.getWidth())) {
       throw new IllegalArgumentException("Given x value is not in range of given image!");
     }
     else if (!(0 < y && x >= toConvert.getHeight())) {
       throw new IllegalArgumentException("Given y value is not in range of given image!");
-    }
-    else if (x % 2 == 1) {
-      throw new IllegalArgumentException("Given x value must be even!");
-    }
-    else if (y % 2 == 1) {
-      throw new IllegalArgumentException("Given y value must be even!");
     }
 
     BufferedImage toReturn = new BufferedImage(x, y, BufferedImageType);
@@ -399,11 +424,23 @@ public class DefaultSeamManipulator implements SeamManipulator {
   public void saveCurrentProcess(Path filePath) throws IOException {
     validFilePath(filePath.getParent());
     SeekableByteChannel out = null;
+
+    int widthToUse = previousStates.get(0).getWidth();
+    int heightToUse = previousStates.get(0).getHeight();
+
+    if (widthToUse % 2 == 1) {
+      widthToUse += 1;
+    }
+
+    if (heightToUse % 2 == 1) {
+      heightToUse += 1;
+    }
+
     try {
       out = NIOUtils.writableFileChannel(filePath.toString());
       AWTSequenceEncoder encoder = new AWTSequenceEncoder(out, Rational.R(25, 1));
       for (BufferedImage bufferedImage : previousStates) {
-        bufferedImage = toEvenSidedImage(bufferedImage, startingWidth, startingHeight);
+        bufferedImage = placeOnLargerImage(bufferedImage, widthToUse, heightToUse);
         // Encode the image
         encoder.encodeImage(bufferedImage);
       }
@@ -413,5 +450,10 @@ public class DefaultSeamManipulator implements SeamManipulator {
     finally {
       NIOUtils.closeQuietly(out);
     }
+  }
+
+  @Override
+  public Iterator<Pixel> iterator() {
+    return new RowColumnIterator(upperLeftCorner);
   }
 }
