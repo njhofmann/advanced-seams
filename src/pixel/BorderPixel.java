@@ -13,6 +13,11 @@ public class BorderPixel implements Pixel {
   }
 
   @Override
+  public boolean isMask() {
+    return false;
+  }
+
+  @Override
   public Color getColor() {
     return Color.BLACK;
   }

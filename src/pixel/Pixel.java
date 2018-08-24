@@ -6,6 +6,8 @@ public interface Pixel {
 
   void makeMask(double maskValue);
 
+  boolean isMask();
+
   Color getColor();
 
   boolean isBorderPixel();

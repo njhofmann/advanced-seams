@@ -39,6 +39,11 @@ public class ImagePixel implements Pixel{
   }
 
   @Override
+  public boolean isMask() {
+    return isMask;
+  }
+
+  @Override
   public Color getColor() {
     return color;
   }

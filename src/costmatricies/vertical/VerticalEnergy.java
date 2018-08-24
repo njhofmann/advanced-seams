@@ -1,8 +1,9 @@
-package costmatricies;
+package costmatricies.vertical;
 
+import costmatricies.vertical.VerticalCostMatrix;
 import pixel.Pixel;
 
-public class HorizontalEnergy implements HorizontalCostMatrix {
+public class VerticalEnergy implements VerticalCostMatrix {
 
   @Override
   public void compute(Pixel pixel) {
@@ -14,10 +15,10 @@ public class HorizontalEnergy implements HorizontalCostMatrix {
     }
 
     double upperLeftEnergy = pixel.getUpperLeftPixel().getCostMatrixEnergy();
-    double leftEnergy = pixel.getLeftPixel().getCostMatrixEnergy();
-    double lowerLeftEnergy = pixel.getLowerLeftPixel().getCostMatrixEnergy();
+    double upperCenterEnergy = pixel.getAbovePixel().getCostMatrixEnergy();
+    double upperRightEnergy = pixel.getUpperRightPixel().getCostMatrixEnergy();
 
     pixel.setCostMatrixEnergy(pixel.getEnergyMapEnergy() + Math.min(upperLeftEnergy,
-        Math.min(leftEnergy, lowerLeftEnergy)));
+        Math.min(upperCenterEnergy, upperRightEnergy)));
   }
 }

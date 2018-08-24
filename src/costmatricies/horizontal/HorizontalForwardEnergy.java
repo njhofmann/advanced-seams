@@ -1,5 +1,6 @@
-package costmatricies;
+package costmatricies.horizontal;
 
+import costmatricies.horizontal.HorizontalCostMatrix;
 import pixel.Pixel;
 
 public class HorizontalForwardEnergy implements HorizontalCostMatrix {

@@ -1,11 +1,9 @@
 package seammanipulators;
 
-import costmatricies.HorizontalCostMatrix;
-import costmatricies.HorizontalEnergy;
-import costmatricies.HorizontalForwardEnergy;
-import costmatricies.VerticalCostMatrix;
-import costmatricies.VerticalEnergy;
-import costmatricies.VerticalForwardEnergy;
+import costmatricies.horizontal.HorizontalCostMatrix;
+import costmatricies.horizontal.HorizontalEnergy;
+import costmatricies.vertical.VerticalCostMatrix;
+import costmatricies.vertical.VerticalEnergy;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.FileNotFoundException;
@@ -15,6 +13,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 import javax.imageio.ImageIO;
 import masks.Coordinate;
 import masks.Mask;
@@ -137,12 +138,19 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     if (maskToApply == null) {
       throw new IllegalArgumentException("Given mask can't be null!");
     }
-    Coordinate[] coordinates = maskToApply.getCoordinates();
+    else if (maskToApply.getMaxX() > imageWidth - 1) {
+      throw new IllegalArgumentException("Given mask's coordinates must fit with this image's "
+          + "current width!");
+    }
+    else if (maskToApply.getMinY() > imageHeight - 1) {
+      throw new IllegalArgumentException("Given mask's coordinates must fit with this image's "
+          + "current height!");
+    }
 
+    Coordinate[] coordinates = maskToApply.getCoordinates();
     for (Coordinate coordinate : coordinates) {
       int currentX = coordinate.getX();
       int currentY = coordinate.getY();
-
       Pixel toChange = getPixel(currentX, currentY);
       toChange.makeMask(valueToApply);
     }
@@ -299,7 +307,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
       throw new IllegalArgumentException("Given new width can't be less than 1 pixel");
     }
 
-    while (imageWidth != newWidth && imageHeight != newHeight) {
+    while (imageWidth != newWidth || imageHeight != newHeight) {
       computeEnergyMap();
       Seam verticalSeam = findMinimumVerticalSeam();
       Seam horizontalSeam = findMinimumHorizontalSeam();
@@ -334,7 +342,27 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
 
   @Override
   public void removeArea(Mask areaToRemove) {
-    applyMask(areaToRemove, DefaultSeamManipulator.maskValue);
+    applyMask(areaToRemove, -DefaultSeamManipulator.maskValue);
+
+    BooleanSupplier hasMask = () -> {
+        for (Pixel pixel : this) {
+          if (pixel.isMask()) {
+            return true;
+          }
+        }
+        return false;
+    };
+
+    while (hasMask.getAsBoolean()) {
+      computeEnergyMap();
+      Seam verticalSeam = findMinimumVerticalSeam();
+      Seam horizontalSeam = findMinimumHorizontalSeam();
+
+      verticalSeam.remove();
+      imageWidth -= 1;
+
+      previousStates.add(getCurrentImage());
+    }
   }
 
   @Override
@@ -410,7 +438,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
       throw new IllegalArgumentException("Given y value is not in range of given image!");
     }
 
-    BufferedImage toReturn = new BufferedImage(x, y, BufferedImageType);
+    BufferedImage toReturn = new BufferedImage(x, y, BufferedImage.TYPE_3BYTE_BGR);
 
     for (int row = 0; row < toConvert.getHeight(); row += 1) {
       for (int column = 1; column < toConvert.getWidth(); column += 1) {

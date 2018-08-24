@@ -73,48 +73,71 @@ public class DefaultMask implements Mask {
     }
   }
 
-  /*
   /**
    * Constructor for this DefaultMask that a takes in a file path for an image consisting of only
-   * white - or pixels with colors (255, 255, 255) in the sRGB color space. Assigns all white
-   * pixels as this DefaultMask's associated coordinates.
+   * white or black pixels - or pixels with colors (255, 255, 255) or (0, 0, 0) in the sRGB color
+   * space. Assigns all white pixels as this DefaultMask's associated coordinates.
    *
-   * @param maskPath
-   * @throws IllegalArgumentException if given {@param maskPath} is null or doesn't exist
+   * @param maskPath file path to the mask to use
+   * @throws IllegalArgumentException if given {@param maskPath} is null or doesn't exist, or if
+   *                                  one of its pixel's isn't exactly white or black
    * @throws IOException if the path to the given image can't be read.
-
-  public DefaultMask(Path maskPath) {
+   */
+  public DefaultMask(Path maskPath) throws IllegalArgumentException, IOException {
     if (maskPath == null) {
       throw new IllegalArgumentException("Given path can't be null!");
     }
     else if (Files.notExists(maskPath)) {
-      throw new IllegalArgumentException("Given path doesn't exist!");
+      throw new IOException("Given path doesn't exist!");
     }
 
-    try {
-      BufferedImage toRead = ImageIO.read(maskPath.toFile());
-      List<Coordinate> tempCoors = new ArrayList<>();
+    int tempMaxX, tempMinX, tempMaxY, tempMinY;
+    BufferedImage toRead = ImageIO.read(maskPath.toFile());
+    List<Coordinate> tempCoors = new ArrayList<>();
 
-      for (int row = 0; row < toRead.getHeight(); row += 1) {
-        for (int column = 0; column < toRead.getWidth(); column += 1) {
-          Color currentColor = new Color(toRead.getRGB(column, row));
+    tempMaxX = 0;
+    tempMaxY = 0;
+    tempMinX = toRead.getWidth() - 1;
+    tempMinY = toRead.getHeight() - 1;
 
-          if (currentColor.equals(Color.WHITE)) {
-            tempCoors.add(new Coordinate(column, row));
+    for (int row = 0; row < toRead.getHeight(); row += 1) {
+      for (int column = 0; column < toRead.getWidth(); column += 1) {
+        Color currentColor = new Color(toRead.getRGB(column, row));
+
+        if (currentColor.equals(Color.WHITE)) {
+          tempCoors.add(new Coordinate(column, row));
+
+          if (column > tempMaxX) {
+            tempMaxX = column;
+          }
+          else if (column < tempMinX) {
+            tempMinX = column;
           }
 
+          if (row > tempMaxY) {
+            tempMaxY = row;
+          }
+          else if (row < tempMinY) {
+            tempMinY = row;
+          }
         }
-      }
-      coordinates = new Coordinate[tempCoors.size()];
-      for (int posn = 0; posn < coordinates.length; posn += 1) {
-        coordinates[posn] = tempCoors.get(posn);
+        /*
+        else if (!currentColor.equals(Color.BLACK)) {
+          throw new IllegalArgumentException("Given image can only contain exactly white or "
+              + "black pixels!");
+        }
+        */
       }
     }
-    catch (IOException e) {
-      e.printStackTrace();
-    }
+    coordinates = new Coordinate[tempCoors.size()];
+    coordinates = tempCoors.toArray(coordinates);
+
+    minX = tempMinX;
+    maxX = tempMaxX;
+    minY = tempMinY;
+    maxY = tempMaxY;
   }
-  */
+
 
   @Override
   public Coordinate[] getCoordinates() {
