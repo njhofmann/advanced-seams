@@ -1,7 +1,7 @@
 package seams;
 
 import java.awt.Color;
-import masks.Coordinate;
+import utility.Coordinate;
 import pixel.Pixel;
 
 public interface Seam {

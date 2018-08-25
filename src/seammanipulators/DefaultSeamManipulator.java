@@ -4,6 +4,7 @@ import costmatricies.horizontal.HorizontalCostMatrix;
 import costmatricies.horizontal.HorizontalEnergy;
 import costmatricies.vertical.VerticalCostMatrix;
 import costmatricies.vertical.VerticalEnergy;
+import utility.Coordinate;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.FileNotFoundException;
@@ -11,12 +12,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import javax.imageio.ImageIO;
-import masks.Coordinate;
 import masks.Mask;
 import org.jcodec.api.awt.AWTSequenceEncoder;
 import org.jcodec.common.io.NIOUtils;
@@ -25,7 +24,6 @@ import org.jcodec.common.model.Rational;
 import pixel.BorderPixel;
 import pixel.ImagePixel;
 import pixel.Pixel;
-import pixel.SortByCostMatrixEnergy;
 import pixel.iterators.ColumnIterator;
 import pixel.iterators.ColumnRowIterator;
 import pixel.iterators.RowColumnIterator;
@@ -34,6 +32,8 @@ import pixel.iterators.RowIterator;
 import seams.HorizontalSeam;
 import seams.Seam;
 import seams.VerticalSeam;
+import utility.DefaultSeamAdjuster;
+import utility.SeamAdjuster;
 
 public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> {
 
@@ -341,7 +341,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
       throw new IllegalArgumentException("Given new width can't be less than 1 pixel");
     }
 
-    // Downsize then upsize down
+    // Downsize then upsize
     while (imageWidth > newWidth || imageHeight > newHeight) {
       computeEnergyMap(upperLeftCorner);
 
@@ -372,8 +372,81 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     }
 
     Pixel copiedUpperLeftCorner = copyCurrentImage();
-    while (imageWidth < newWidth || imageHeight < newHeight) {
+    if (imageWidth < newWidth) {
+      int widthDifference = newWidth - imageWidth ;
+      Coordinate[][] coordinatesToAdd = new Coordinate[widthDifference][];
+      SeamAdjuster removalSeamAdjuster = new DefaultSeamAdjuster(imageWidth);
+      for (int i = 0; i < widthDifference; i += 1) {
+        Seam toAdd = findMinimumVerticalSeam(copiedUpperLeftCorner);
+        toAdd.remove();
+        Coordinate[] currentCoordinates = toAdd.getCoordinates();
+        removalSeamAdjuster.adjustCoordinatesByXInclusive(currentCoordinates);
+        coordinatesToAdd[i] = currentCoordinates;
+      }
 
+      SeamAdjuster upscalingSeamAdjuster = new DefaultSeamAdjuster(imageWidth);
+      for (Coordinate[] coordinates : coordinatesToAdd) {
+        upscalingSeamAdjuster.adjustCoordinatesByXExclusive(coordinates);
+
+        Pixel prevLeft = new BorderPixel();
+        Pixel prevMiddle = new BorderPixel();
+        Pixel prevRight = new BorderPixel();
+        int previousX = -1;
+        Pixel currentLeft = new BorderPixel();
+        Pixel currentMiddle = new BorderPixel();
+        Pixel currentRight = new BorderPixel();
+
+        for (int i = 0; i < coordinates.length; i += 1) {
+          Coordinate coordinate = coordinates[i];
+          int x = coordinate.getX();
+          int y = coordinate.getY();
+
+          if (i == 0) {
+            currentLeft = getPixel(x, y);
+            currentMiddle = currentLeft.createPixelWithRight();
+            currentRight = currentLeft.getRightPixel();
+          }
+          else if (x == previousX - 1) {
+            currentLeft = prevLeft.getLowerLeftPixel();
+            currentMiddle = currentLeft.createPixelWithRight();
+            currentRight = prevRight.getLowerLeftPixel();
+
+            prevMiddle.setBelowPixel(currentRight);
+            currentRight.setAbovePixel(prevMiddle);
+            prevLeft.setBelowPixel(currentMiddle);
+            currentMiddle.setAbovePixel(prevLeft);
+          }
+          else if (x == previousX + 1) {
+            currentLeft = prevLeft.getLowerRightPixel();
+            currentMiddle = currentLeft.createPixelWithRight();
+            currentRight = prevRight.getLowerRightPixel();
+
+            prevMiddle.setBelowPixel(currentLeft);
+            currentLeft.setAbovePixel(prevMiddle);
+            prevRight.setBelowPixel(currentMiddle);
+            currentMiddle.setAbovePixel(prevRight);
+          }
+          else {
+            currentLeft = prevLeft.getBelowPixel();
+            currentMiddle = currentLeft.createPixelWithRight();
+            currentRight = prevRight.getBelowPixel();
+
+            prevMiddle.setBelowPixel(currentMiddle);
+            currentMiddle.setAbovePixel(prevMiddle);
+          }
+          currentLeft.setRightPixel(currentMiddle);
+          currentMiddle.setLeftPixel(currentLeft);
+          currentMiddle.setRightPixel(currentRight);
+          currentRight.setLeftPixel(currentMiddle);
+
+          prevLeft = currentLeft;
+          prevMiddle = currentMiddle;
+          prevRight = currentRight;
+          previousX = x;
+        }
+        imageWidth += 1;
+        storeCurrentState();
+      }
     }
   }
 
@@ -482,10 +555,14 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     return toReturn;
   }
 
+  private void storeCurrentState() {
+    previousStates.add(getCurrentImage());
+  }
+
   @Override
   public void saveCurrentImage(Path filePath) throws IOException {
     validFilePath(filePath.getParent());
-    ImageIO.write(getCurrentImage(), "jpeg", filePath.toFile());
+    ImageIO.write(getCurrentImage(), "png", filePath.toFile());
   }
 
   private BufferedImage placeOnLargerImage(BufferedImage toConvert, int x, int y) {
@@ -511,8 +588,10 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     validFilePath(filePath.getParent());
     SeekableByteChannel out = null;
 
-    int widthToUse = previousStates.get(0).getWidth();
-    int heightToUse = previousStates.get(0).getHeight();
+    BufferedImage start = previousStates.get(0);
+    BufferedImage end = previousStates.get(previousStates.size() - 1);
+    int widthToUse = Math.max(start.getWidth(), end.getWidth());
+    int heightToUse = Math.max(start.getHeight(), end.getHeight());
 
     if (widthToUse % 2 == 1) {
       widthToUse += 1;

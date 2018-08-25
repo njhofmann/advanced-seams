@@ -8,6 +8,10 @@ public interface Pixel {
 
   boolean isMask();
 
+  Pixel createPixelWithRight();
+
+  Pixel createPixelWithBelow();
+
   Color getColor();
 
   boolean isBorderPixel();

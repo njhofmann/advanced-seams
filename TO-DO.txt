@@ -5,3 +5,4 @@
 -Documentation specify difference between method for removing a seam and simply
 -Cost matrix energies double -> int
 -Null checkers on helper methods
+-More optimal seam insertion

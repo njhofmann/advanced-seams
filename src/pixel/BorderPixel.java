@@ -18,6 +18,16 @@ public class BorderPixel implements Pixel {
   }
 
   @Override
+  public Pixel createPixelWithRight() {
+    return this;
+  }
+
+  @Override
+  public Pixel createPixelWithBelow() {
+    return this;
+  }
+
+  @Override
   public Color getColor() {
     return Color.BLACK;
   }

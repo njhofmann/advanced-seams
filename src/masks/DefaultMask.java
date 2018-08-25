@@ -1,6 +1,7 @@
 package masks;
 
 import java.awt.Color;
+import utility.Coordinate;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.file.Files;

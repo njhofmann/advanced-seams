@@ -26,9 +26,9 @@ public class RunSeamUtilities {
 
     SeamManipulator seamManipulator = new DefaultSeamManipulator(inputPath, energyMap);
     //seamManipulator.removeArea(pathMask);
-    //seamManipulator.resize(300, 300);
+    seamManipulator.resize(1000, 395);
     seamManipulator.saveCurrentImage(outputPath);
-    //seamManipulator.saveCurrentProcess(videoPath);
+    seamManipulator.saveCurrentProcess(videoPath);
     //ImageIO.write(seamManipulator.getCurrentCostMatrix(), "png", outputPath.toFile());
     //ImageIO.write(seamManipulator.getCurrentCostMatrix(), "png", outputPath.toFile());
   }

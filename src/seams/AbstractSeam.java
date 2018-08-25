@@ -2,9 +2,10 @@ package seams;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import masks.Coordinate;
+import utility.Coordinate;
 import pixel.Pixel;
 
 public abstract class AbstractSeam implements Seam {
@@ -25,6 +26,7 @@ public abstract class AbstractSeam implements Seam {
     }
     totalEnergy += pixel.getCostMatrixEnergy();
     pixels.add(pixel);
+    coordinates.add(pixelCoor);
   }
 
   @Override
@@ -46,6 +48,7 @@ public abstract class AbstractSeam implements Seam {
   @Override
   public Coordinate[] getCoordinates() {
     Coordinate[] toReturn = new Coordinate[coordinates.size()];
+    Collections.reverse(coordinates);
     toReturn = coordinates.toArray(toReturn);
     return toReturn;
   }

@@ -1,6 +1,7 @@
 package pixel;
 
 import java.awt.Color;
+import java.util.function.IntBinaryOperator;
 
 public class ImagePixel implements Pixel{
 
@@ -41,6 +42,29 @@ public class ImagePixel implements Pixel{
   @Override
   public boolean isMask() {
     return isMask;
+  }
+
+  private Pixel createAvgPixel(Pixel otherPixel) {
+    Color otherColor = otherPixel.getColor();
+
+    IntBinaryOperator intAverage = (x, y) -> Math.round((x + y) / 2);
+
+    int avgRed = intAverage.applyAsInt(color.getRed(), otherColor.getRed());
+    int avgGreen = intAverage.applyAsInt(color.getGreen(), otherColor.getGreen());
+    int avgBlue = intAverage.applyAsInt(color.getBlue(), color.getBlue());
+
+    Color newPixelColor = new Color(avgRed, avgGreen, avgBlue);
+    return new ImagePixel(newPixelColor);
+  }
+
+  @Override
+  public Pixel createPixelWithRight() {
+    return createAvgPixel(rightPixel);
+  }
+
+  @Override
+  public Pixel createPixelWithBelow() {
+    return createAvgPixel(belowPixel);
   }
 
   @Override
