@@ -1,4 +1,7 @@
 -Get forward energy algorithms to work
--Implement mask removal
--Implement image -> mask
 -Implement seam insertion
+-Optimal seam removal implementation
+-More specific resize methods
+-Documentation specify difference between method for removing a seam and simply
+-Cost matrix energies double -> int
+-Null checkers on helper methods

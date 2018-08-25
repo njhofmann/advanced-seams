@@ -30,4 +30,9 @@ public class VerticalSeam extends AbstractSeam implements Seam {
       }
     }
   }
+
+  @Override
+  public boolean isVerticalSeam() {
+    return true;
+  }
 }
