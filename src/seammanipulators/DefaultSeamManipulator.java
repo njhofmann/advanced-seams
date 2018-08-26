@@ -320,7 +320,8 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
       if (Double.compare(minEnergy, upperLeftEnergy) == 0) {
         currentY -= 1;
         currentStartingPixel = upperLeftPixel;
-      } else if (Double.compare(minEnergy, lowerLeftEnergy) == 0) {
+      }
+      else if (Double.compare(minEnergy, lowerLeftEnergy) == 0) {
         currentY += 1;
         currentStartingPixel = lowerLeftPixel;
       } else {
@@ -371,9 +372,10 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
       previousStates.add(getCurrentImage());
     }
 
-    Pixel copiedUpperLeftCorner = copyCurrentImage();
+
     if (imageWidth < newWidth) {
-      int widthDifference = newWidth - imageWidth ;
+      Pixel copiedUpperLeftCorner = copyCurrentImage();
+      int widthDifference = newWidth - imageWidth;
       Coordinate[][] coordinatesToAdd = new Coordinate[widthDifference][];
       SeamAdjuster removalSeamAdjuster = new DefaultSeamAdjuster(imageWidth);
       for (int i = 0; i < widthDifference; i += 1) {
@@ -445,6 +447,84 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
           previousX = x;
         }
         imageWidth += 1;
+        storeCurrentState();
+      }
+    }
+
+    if (imageHeight < newHeight) {
+      Pixel copiedUpperLeftCorner = copyCurrentImage();
+      int heightDifference = newHeight - imageHeight;
+      Coordinate[][] coordinatesToAdd = new Coordinate[heightDifference][];
+      SeamAdjuster removalSeamAdjuster = new DefaultSeamAdjuster(imageHeight);
+      for (int i = 0; i < heightDifference; i += 1) {
+        Seam toAdd = findMinimumHorizontalSeam(copiedUpperLeftCorner);
+        toAdd.remove();
+        Coordinate[] currentCoordinate = toAdd.getCoordinates();
+        removalSeamAdjuster.adjustCoordinatesByYInclusive(currentCoordinate);
+        coordinatesToAdd[i] = currentCoordinate;
+      }
+
+      SeamAdjuster upscalingSeamAdjuster = new DefaultSeamAdjuster(imageHeight);
+      for (Coordinate[] coordinates : coordinatesToAdd) {
+        upscalingSeamAdjuster.adjustCoordinatesByYExclusive(coordinates);
+
+        Pixel prevAbove = new BorderPixel();
+        Pixel prevMiddle = new BorderPixel();
+        Pixel prevBelow = new BorderPixel();
+        int prevY = -1;
+        Pixel curAbove = new BorderPixel();
+        Pixel curMiddle = new BorderPixel();
+        Pixel curBelow = new BorderPixel();
+
+        for (int i = 0; i < coordinates.length; i += 1) {
+          Coordinate coordinate = coordinates[i];
+          int x = coordinate.getX();
+          int y = coordinate.getY();
+
+          if (i == 0) {
+            curAbove = getPixel(x, y);
+            curMiddle = curAbove.createPixelWithBelow();
+            curBelow = curAbove.getBelowPixel();
+          }
+          else if (y == prevY - 1) {
+            curAbove = prevAbove.getUpperRightPixel();
+            curMiddle = curAbove.createPixelWithBelow();
+            curBelow = prevBelow.getRightPixel().getAbovePixel();
+
+            prevAbove.setRightPixel(curMiddle);
+            curMiddle.setLeftPixel(prevAbove);
+            prevMiddle.setRightPixel(curBelow);
+            curBelow.setLeftPixel(prevMiddle);
+          }
+          else if (y == prevY + 1) {
+            curAbove = prevAbove.getRightPixel().getBelowPixel();
+            curMiddle = curAbove.createPixelWithBelow();
+            curBelow = prevBelow.getLowerRightPixel();
+
+            prevMiddle.setRightPixel(curAbove);
+            curAbove.setLeftPixel(prevMiddle);
+            prevBelow.setRightPixel(curMiddle);
+            curMiddle.setLeftPixel(prevBelow);
+          }
+          else {
+            curAbove = prevAbove.getRightPixel();
+            curMiddle = curAbove.createPixelWithBelow();
+            curBelow = prevBelow.getRightPixel();
+
+            prevMiddle.setRightPixel(curMiddle);
+            curMiddle.setLeftPixel(prevMiddle);
+          }
+          curAbove.setBelowPixel(curMiddle);
+          curMiddle.setAbovePixel(curAbove);
+          curMiddle.setBelowPixel(curBelow);
+          curBelow.setAbovePixel(curMiddle);
+
+          prevAbove = curAbove;
+          prevMiddle = curMiddle;
+          prevBelow = curBelow;
+          prevY = y;
+        }
+        imageHeight += 1;
         storeCurrentState();
       }
     }

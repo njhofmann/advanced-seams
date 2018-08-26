@@ -1,10 +1,5 @@
 package utility;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
 public class DefaultSeamAdjuster implements SeamAdjuster {
 
   private final int adjustmentValue = 1;
@@ -79,8 +74,7 @@ public class DefaultSeamAdjuster implements SeamAdjuster {
     addValueTo(adjustmentStart + 1);
   }
 
-  @Override
-  public void adjustCoordinatesByY(Coordinate[] toAdjust) {
+  private int adjustCoordinatesByY(Coordinate[] toAdjust) {
     validCoordinateArray(toAdjust);
 
     int coordinateY = toAdjust[0].getY();
@@ -94,6 +88,18 @@ public class DefaultSeamAdjuster implements SeamAdjuster {
       toAdjust[i] = new Coordinate(newX, newY);
     }
 
-    addValueTo(coordinateY);
+    return coordinateY;
+  }
+
+  @Override
+  public void adjustCoordinatesByYInclusive(Coordinate[] toAdjust) {
+    int adjustmentStart = adjustCoordinatesByY(toAdjust);
+    addValueTo(adjustmentStart);
+  }
+
+  @Override
+  public void adjustCoordinatesByYExclusive(Coordinate[] toAdjust) {
+    int adjustmentStart = adjustCoordinatesByY(toAdjust);
+    addValueTo(adjustmentStart + 1);
   }
 }

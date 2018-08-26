@@ -6,6 +6,8 @@ public interface SeamAdjuster {
 
   void adjustCoordinatesByXExclusive(Coordinate[] toAdjust);
 
-  void adjustCoordinatesByY(Coordinate[] toAdjust);
+  void adjustCoordinatesByYInclusive(Coordinate[] toAdjust);
+
+  void adjustCoordinatesByYExclusive(Coordinate[] toAdjust);
 
 }
