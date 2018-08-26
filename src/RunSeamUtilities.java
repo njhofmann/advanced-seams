@@ -15,18 +15,18 @@ import seammanipulators.SeamManipulator;
 public class RunSeamUtilities {
 
   public static void main(String[] args) throws IOException {
-    Path inputPath = Paths.get("", "resources\\yidris.png").toAbsolutePath();
+    Path inputPath = Paths.get("", "resources\\baron.png").toAbsolutePath();
     Path outputPath = Paths.get("", "resources\\output.png").toAbsolutePath();
     Path videoPath = Paths.get("", "resources\\video.mp4").toAbsolutePath();
-    Path maskPath = Paths.get("", "resources\\pathmask.png").toAbsolutePath();
+    Path maskPath = Paths.get("", "resources\\pathmask2.png").toAbsolutePath();
     EnergyMapMaker energyMap = new AverageSurroundingGradient();
 
     Mask rectMask = new DefaultMask(300, 100, 450, 200);
     Mask pathMask = new DefaultMask(maskPath);
 
-    SeamManipulator seamManipulator = new DefaultSeamManipulator(inputPath, energyMap);
-    //seamManipulator.removeArea(pathMask);
-    seamManipulator.resize(1300, 1000);
+    SeamManipulator seamManipulator = new DefaultSeamManipulator(inputPath, energyMap, true);
+    seamManipulator.replaceArea(pathMask);
+    //seamManipulator.resize(300, 600);
     seamManipulator.saveCurrentImage(outputPath);
     seamManipulator.saveCurrentProcess(videoPath);
     //ImageIO.write(seamManipulator.getCurrentCostMatrix(), "png", outputPath.toFile());

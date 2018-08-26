@@ -1,8 +1,6 @@
 -Get forward energy algorithms to work
--Implement seam insertion
 -Optimal seam removal implementation
 -More specific resize methods
--Documentation specify difference between method for removing a seam and simply
 -Cost matrix energies double -> int
 -Null checkers on helper methods
--More optimal seam insertion
+-Redo insertion when resizing for new sizes > (2 * current size)

@@ -4,6 +4,7 @@ import costmatricies.horizontal.HorizontalCostMatrix;
 import costmatricies.horizontal.HorizontalEnergy;
 import costmatricies.vertical.VerticalCostMatrix;
 import costmatricies.vertical.VerticalEnergy;
+import java.util.Stack;
 import utility.Coordinate;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
@@ -37,7 +38,9 @@ import utility.SeamAdjuster;
 
 public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> {
 
-  private static final int maskValue = 255;
+  private final boolean record;
+
+  private static final int maskValue = 5000;
 
   List<BufferedImage> previousStates = new ArrayList<>();
 
@@ -55,8 +58,9 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
 
   private double maxCostMatrixEnergy;
 
-  public DefaultSeamManipulator(Path inputFilePath, EnergyMapMaker energyMapMaker) throws IOException {
+  public DefaultSeamManipulator(Path inputFilePath, EnergyMapMaker energyMapMaker, boolean record) throws IOException {
      validFilePath(inputFilePath);
+     this.record = record;
 
     if (energyMapMaker == null) {
       throw new IllegalArgumentException("Given energy map can't be null!");
@@ -65,11 +69,10 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
 
     BufferedImage loadedImage = ImageIO.read(inputFilePath.toFile());
     BufferedImageType = loadedImage.getType();
-    previousStates.add(loadedImage);
     imageWidth = loadedImage.getWidth();
     imageHeight = loadedImage.getHeight();
-
     upperLeftCorner = bufferedImageToPixel(loadedImage);
+    storeCurrentState();
   }
 
   private Pixel bufferedImageToPixel(BufferedImage toConvert) {
@@ -258,6 +261,10 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     return currentSeam;
   }
 
+  private Seam findMinimumVerticalSeam() {
+    return findMinimumVerticalSeam(upperLeftCorner);
+  }
+
   private void computeHorizontalCostMatrix(HorizontalCostMatrix costMatrix, Pixel upperLeftCorner) {
     maxCostMatrixEnergy = 0;
     ColumnRowIterator columnRowIterator = new ColumnRowIterator(upperLeftCorner);
@@ -333,6 +340,10 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     return seam;
   }
 
+  private Seam findMinimumHorizontalSeam() {
+    return findMinimumHorizontalSeam(upperLeftCorner);
+  }
+
   @Override
   public void resize(int newWidth, int newHeight) {
     if (newWidth < 1) {
@@ -344,190 +355,216 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
 
     // Downsize then upsize
     while (imageWidth > newWidth || imageHeight > newHeight) {
-      computeEnergyMap(upperLeftCorner);
-
-      if (imageWidth != newWidth && imageHeight != newHeight) {
+      if (imageWidth > newWidth && imageHeight > newHeight) {
         // Remove which ever seam removes less average energy
-        Seam verticalSeam = findMinimumVerticalSeam(upperLeftCorner);
-        Seam horizontalSeam = findMinimumHorizontalSeam(upperLeftCorner);
+        Seam verticalSeam = findMinimumVerticalSeam();
+        Seam horizontalSeam = findMinimumHorizontalSeam();
         if (verticalSeam.getAverageEnergy() < horizontalSeam.getAverageEnergy()) {
-          verticalSeam.remove();
-          imageWidth -= 1;
+          removeSeam(verticalSeam);
         }
         else {
-          horizontalSeam.remove();
-          imageHeight -= 1;
+          removeSeam(horizontalSeam);
         }
       }
-      else if (imageWidth != newWidth) {
-        Seam verticalSeam = findMinimumVerticalSeam(upperLeftCorner);
-        verticalSeam.remove();
-        imageWidth -= 1;
+      else if (imageWidth > newWidth) {
+        removeSeam(findMinimumVerticalSeam());
       }
-      else if (imageHeight != newHeight) {
-        Seam horizontalSeam = findMinimumHorizontalSeam(upperLeftCorner);
-        horizontalSeam.remove();
-        imageHeight -= 1;
+      else if (imageHeight > newHeight) {
+        removeSeam(findMinimumHorizontalSeam());
       }
-      previousStates.add(getCurrentImage());
     }
 
-
-    if (imageWidth < newWidth) {
-      Pixel copiedUpperLeftCorner = copyCurrentImage();
-      int widthDifference = newWidth - imageWidth;
-      Coordinate[][] coordinatesToAdd = new Coordinate[widthDifference][];
-      SeamAdjuster removalSeamAdjuster = new DefaultSeamAdjuster(imageWidth);
-      for (int i = 0; i < widthDifference; i += 1) {
-        Seam toAdd = findMinimumVerticalSeam(copiedUpperLeftCorner);
-        toAdd.remove();
-        Coordinate[] currentCoordinates = toAdd.getCoordinates();
-        removalSeamAdjuster.adjustCoordinatesByXInclusive(currentCoordinates);
-        coordinatesToAdd[i] = currentCoordinates;
+    while (imageWidth < newWidth || imageHeight < newHeight) {
+      /*
+      if (imageWidth < newWidth && imageHeight < newHeight) {
+        Pixel copiedUpperLeftCorner = copyCurrentImage();
+        Seam verticalInsert = findMinimumVerticalSeam(copiedUpperLeftCorner);
+        Seam horizontalInsert = findMinimumHorizontalSeam(copiedUpperLeftCorner);
+        insertVerticalCoordinates(verticalInsert.getCoordinates());
+        insertHorizontalCoordinates(horizontalInsert.getCoordinates());
       }
+      else
+      */
+      if (imageWidth < newWidth) {
+        Pixel copiedUpperLeftCorner = copyCurrentImage();
+        int widthDifference = newWidth - imageWidth;
+        Coordinate[][] coordinatesToAdd = new Coordinate[widthDifference][];
+        SeamAdjuster removalSeamAdjuster = new DefaultSeamAdjuster(imageWidth);
+        for (int i = 0; i < widthDifference; i += 1) {
+          Seam toAdd = findMinimumVerticalSeam(copiedUpperLeftCorner);
+          toAdd.remove();
+          Coordinate[] currentCoordinates = toAdd.getCoordinates();
+          removalSeamAdjuster.adjustCoordinatesByXInclusive(currentCoordinates);
+          coordinatesToAdd[i] = currentCoordinates;
+        }
+        insertVerticalCoordinates(coordinatesToAdd);
+      }
+      else if (imageHeight < newHeight) {
+        Pixel copiedUpperLeftCorner = copyCurrentImage();
+        int heightDifference = newHeight - imageHeight;
+        Coordinate[][] coordinatesToAdd = new Coordinate[heightDifference][];
+        SeamAdjuster removalSeamAdjuster = new DefaultSeamAdjuster(imageHeight);
+        for (int i = 0; i < heightDifference; i += 1) {
+          Seam toAdd = findMinimumHorizontalSeam(copiedUpperLeftCorner);
+          toAdd.remove();
+          Coordinate[] currentCoordinate = toAdd.getCoordinates();
+          removalSeamAdjuster.adjustCoordinatesByYInclusive(currentCoordinate);
+          coordinatesToAdd[i] = currentCoordinate;
+        }
+        insertHorizontalCoordinates(coordinatesToAdd);
+      }
+    }
+  }
 
-      SeamAdjuster upscalingSeamAdjuster = new DefaultSeamAdjuster(imageWidth);
-      for (Coordinate[] coordinates : coordinatesToAdd) {
+  private void insertVerticalCoordinates(Coordinate[]... coordinatesToAdd) {
+    SeamAdjuster upscalingSeamAdjuster = new DefaultSeamAdjuster(imageWidth);
+    for (Coordinate[] coordinates : coordinatesToAdd) {
+      if (coordinatesToAdd.length > 1) {
         upscalingSeamAdjuster.adjustCoordinatesByXExclusive(coordinates);
+      }
 
-        Pixel prevLeft = new BorderPixel();
-        Pixel prevMiddle = new BorderPixel();
-        Pixel prevRight = new BorderPixel();
-        int previousX = -1;
-        Pixel currentLeft = new BorderPixel();
-        Pixel currentMiddle = new BorderPixel();
-        Pixel currentRight = new BorderPixel();
+      Pixel prevLeft = new BorderPixel();
+      Pixel prevMiddle = new BorderPixel();
+      Pixel prevRight = new BorderPixel();
+      int previousX = -1;
+      Pixel currentLeft = new BorderPixel();
+      Pixel currentMiddle = new BorderPixel();
+      Pixel currentRight = new BorderPixel();
 
-        for (int i = 0; i < coordinates.length; i += 1) {
-          Coordinate coordinate = coordinates[i];
-          int x = coordinate.getX();
-          int y = coordinate.getY();
+      for (int i = 0; i < coordinates.length; i += 1) {
+        Coordinate coordinate = coordinates[i];
+        int x = coordinate.getX();
+        int y = coordinate.getY();
 
-          if (i == 0) {
-            currentLeft = getPixel(x, y);
-            currentMiddle = currentLeft.createPixelWithRight();
-            currentRight = currentLeft.getRightPixel();
-          }
-          else if (x == previousX - 1) {
-            currentLeft = prevLeft.getLowerLeftPixel();
-            currentMiddle = currentLeft.createPixelWithRight();
-            currentRight = prevRight.getLowerLeftPixel();
-
-            prevMiddle.setBelowPixel(currentRight);
-            currentRight.setAbovePixel(prevMiddle);
-            prevLeft.setBelowPixel(currentMiddle);
-            currentMiddle.setAbovePixel(prevLeft);
-          }
-          else if (x == previousX + 1) {
-            currentLeft = prevLeft.getLowerRightPixel();
-            currentMiddle = currentLeft.createPixelWithRight();
-            currentRight = prevRight.getLowerRightPixel();
-
-            prevMiddle.setBelowPixel(currentLeft);
-            currentLeft.setAbovePixel(prevMiddle);
-            prevRight.setBelowPixel(currentMiddle);
-            currentMiddle.setAbovePixel(prevRight);
-          }
-          else {
-            currentLeft = prevLeft.getBelowPixel();
-            currentMiddle = currentLeft.createPixelWithRight();
-            currentRight = prevRight.getBelowPixel();
-
-            prevMiddle.setBelowPixel(currentMiddle);
-            currentMiddle.setAbovePixel(prevMiddle);
-          }
-          currentLeft.setRightPixel(currentMiddle);
-          currentMiddle.setLeftPixel(currentLeft);
-          currentMiddle.setRightPixel(currentRight);
-          currentRight.setLeftPixel(currentMiddle);
-
-          prevLeft = currentLeft;
-          prevMiddle = currentMiddle;
-          prevRight = currentRight;
-          previousX = x;
+        if (i == 0) {
+          currentLeft = getPixel(x, y);
+          currentMiddle = currentLeft.createPixelWithRight();
+          currentRight = currentLeft.getRightPixel();
         }
-        imageWidth += 1;
-        storeCurrentState();
+        else if (x == previousX - 1) {
+          currentLeft = prevLeft.getLowerLeftPixel();
+          currentMiddle = currentLeft.createPixelWithRight();
+          currentRight = prevRight.getLowerLeftPixel();
+
+          prevMiddle.setBelowPixel(currentRight);
+          currentRight.setAbovePixel(prevMiddle);
+          prevLeft.setBelowPixel(currentMiddle);
+          currentMiddle.setAbovePixel(prevLeft);
+        }
+        else if (x == previousX + 1) {
+          currentLeft = prevLeft.getLowerRightPixel();
+          currentMiddle = currentLeft.createPixelWithRight();
+          currentRight = prevRight.getLowerRightPixel();
+
+          prevMiddle.setBelowPixel(currentLeft);
+          currentLeft.setAbovePixel(prevMiddle);
+          prevRight.setBelowPixel(currentMiddle);
+          currentMiddle.setAbovePixel(prevRight);
+        }
+        else {
+          currentLeft = prevLeft.getBelowPixel();
+          currentMiddle = currentLeft.createPixelWithRight();
+          currentRight = prevRight.getBelowPixel();
+
+          prevMiddle.setBelowPixel(currentMiddle);
+          currentMiddle.setAbovePixel(prevMiddle);
+        }
+        currentLeft.setRightPixel(currentMiddle);
+        currentMiddle.setLeftPixel(currentLeft);
+        currentMiddle.setRightPixel(currentRight);
+        currentRight.setLeftPixel(currentMiddle);
+
+        prevLeft = currentLeft;
+        prevMiddle = currentMiddle;
+        prevRight = currentRight;
+        previousX = x;
       }
+      imageWidth += 1;
+      storeCurrentState();
     }
+  }
 
-    if (imageHeight < newHeight) {
-      Pixel copiedUpperLeftCorner = copyCurrentImage();
-      int heightDifference = newHeight - imageHeight;
-      Coordinate[][] coordinatesToAdd = new Coordinate[heightDifference][];
-      SeamAdjuster removalSeamAdjuster = new DefaultSeamAdjuster(imageHeight);
-      for (int i = 0; i < heightDifference; i += 1) {
-        Seam toAdd = findMinimumHorizontalSeam(copiedUpperLeftCorner);
-        toAdd.remove();
-        Coordinate[] currentCoordinate = toAdd.getCoordinates();
-        removalSeamAdjuster.adjustCoordinatesByYInclusive(currentCoordinate);
-        coordinatesToAdd[i] = currentCoordinate;
-      }
-
-      SeamAdjuster upscalingSeamAdjuster = new DefaultSeamAdjuster(imageHeight);
-      for (Coordinate[] coordinates : coordinatesToAdd) {
+  private void insertHorizontalCoordinates(Coordinate[]... coordinatesToAdd) {
+    SeamAdjuster upscalingSeamAdjuster = new DefaultSeamAdjuster(imageHeight);
+    for (Coordinate[] coordinates : coordinatesToAdd) {
+      if (coordinatesToAdd.length > 1) {
         upscalingSeamAdjuster.adjustCoordinatesByYExclusive(coordinates);
-
-        Pixel prevAbove = new BorderPixel();
-        Pixel prevMiddle = new BorderPixel();
-        Pixel prevBelow = new BorderPixel();
-        int prevY = -1;
-        Pixel curAbove = new BorderPixel();
-        Pixel curMiddle = new BorderPixel();
-        Pixel curBelow = new BorderPixel();
-
-        for (int i = 0; i < coordinates.length; i += 1) {
-          Coordinate coordinate = coordinates[i];
-          int x = coordinate.getX();
-          int y = coordinate.getY();
-
-          if (i == 0) {
-            curAbove = getPixel(x, y);
-            curMiddle = curAbove.createPixelWithBelow();
-            curBelow = curAbove.getBelowPixel();
-          }
-          else if (y == prevY - 1) {
-            curAbove = prevAbove.getUpperRightPixel();
-            curMiddle = curAbove.createPixelWithBelow();
-            curBelow = prevBelow.getRightPixel().getAbovePixel();
-
-            prevAbove.setRightPixel(curMiddle);
-            curMiddle.setLeftPixel(prevAbove);
-            prevMiddle.setRightPixel(curBelow);
-            curBelow.setLeftPixel(prevMiddle);
-          }
-          else if (y == prevY + 1) {
-            curAbove = prevAbove.getRightPixel().getBelowPixel();
-            curMiddle = curAbove.createPixelWithBelow();
-            curBelow = prevBelow.getLowerRightPixel();
-
-            prevMiddle.setRightPixel(curAbove);
-            curAbove.setLeftPixel(prevMiddle);
-            prevBelow.setRightPixel(curMiddle);
-            curMiddle.setLeftPixel(prevBelow);
-          }
-          else {
-            curAbove = prevAbove.getRightPixel();
-            curMiddle = curAbove.createPixelWithBelow();
-            curBelow = prevBelow.getRightPixel();
-
-            prevMiddle.setRightPixel(curMiddle);
-            curMiddle.setLeftPixel(prevMiddle);
-          }
-          curAbove.setBelowPixel(curMiddle);
-          curMiddle.setAbovePixel(curAbove);
-          curMiddle.setBelowPixel(curBelow);
-          curBelow.setAbovePixel(curMiddle);
-
-          prevAbove = curAbove;
-          prevMiddle = curMiddle;
-          prevBelow = curBelow;
-          prevY = y;
-        }
-        imageHeight += 1;
-        storeCurrentState();
       }
+
+      Pixel prevAbove = new BorderPixel();
+      Pixel prevMiddle = new BorderPixel();
+      Pixel prevBelow = new BorderPixel();
+      int prevY = -1;
+      Pixel curAbove = new BorderPixel();
+      Pixel curMiddle = new BorderPixel();
+      Pixel curBelow = new BorderPixel();
+
+      for (int i = 0; i < coordinates.length; i += 1) {
+        Coordinate coordinate = coordinates[i];
+        int x = coordinate.getX();
+        int y = coordinate.getY();
+
+        if (i == 0) {
+          curAbove = getPixel(x, y);
+          curMiddle = curAbove.createPixelWithBelow();
+          curBelow = curAbove.getBelowPixel();
+        }
+        else if (y == prevY - 1) {
+          curAbove = prevAbove.getUpperRightPixel();
+          curMiddle = curAbove.createPixelWithBelow();
+          curBelow = prevBelow.getRightPixel().getAbovePixel();
+
+          prevAbove.setRightPixel(curMiddle);
+          curMiddle.setLeftPixel(prevAbove);
+          prevMiddle.setRightPixel(curBelow);
+          curBelow.setLeftPixel(prevMiddle);
+        }
+        else if (y == prevY + 1) {
+          curAbove = prevAbove.getRightPixel().getBelowPixel();
+          curMiddle = curAbove.createPixelWithBelow();
+          curBelow = prevBelow.getLowerRightPixel();
+
+          prevMiddle.setRightPixel(curAbove);
+          curAbove.setLeftPixel(prevMiddle);
+          prevBelow.setRightPixel(curMiddle);
+          curMiddle.setLeftPixel(prevBelow);
+        }
+        else {
+          curAbove = prevAbove.getRightPixel();
+          curMiddle = curAbove.createPixelWithBelow();
+          curBelow = prevBelow.getRightPixel();
+
+          prevMiddle.setRightPixel(curMiddle);
+          curMiddle.setLeftPixel(prevMiddle);
+        }
+        curAbove.setBelowPixel(curMiddle);
+        curMiddle.setAbovePixel(curAbove);
+        curMiddle.setBelowPixel(curBelow);
+        curBelow.setAbovePixel(curMiddle);
+
+        prevAbove = curAbove;
+        prevMiddle = curMiddle;
+        prevBelow = curBelow;
+        prevY = y;
+      }
+      imageHeight += 1;
+      storeCurrentState();
     }
+  }
+
+  private void removeSeam(Seam toRemove) {
+    if (toRemove == null) {
+      throw new IllegalArgumentException("Given seam can't be null!");
+    }
+    else if (toRemove.isVerticalSeam()) {
+      imageWidth -= 1;
+    }
+    else {
+      imageHeight -= 1;
+    }
+
+    toRemove.remove();
+    storeCurrentState();
   }
 
   @Override
@@ -555,12 +592,12 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     while (hasMask.getAsBoolean()) {
       Seam seam;
       if (horzToRemove > vertToRemove) {
-        seam = findMinimumHorizontalSeam(upperLeftCorner);
+        seam = findMinimumHorizontalSeam();
         imageHeight -= 1;
         horzToRemove -= 1;
       }
       else {
-        seam = findMinimumVerticalSeam(upperLeftCorner);
+        seam = findMinimumVerticalSeam();
         imageWidth -= 1;
         vertToRemove -= 1;
       }
@@ -572,12 +609,64 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
   @Override
   public void replaceArea(Mask areaToRemove) {
     if (areaToRemove == null) {
-      throw new IllegalArgumentException("Given area can't be null!");
+      throw new IllegalArgumentException("Given mask can't be null!");
     }
+    applyMask(areaToRemove, -DefaultSeamManipulator.maskValue);
+
     int startingWidth = imageWidth;
     int startingHeight = imageHeight;
-    removeArea(areaToRemove);
+
+    int horzToRemove = areaToRemove.getMaxX() - areaToRemove.getMinX() + 1;
+    int vertToRemove = areaToRemove.getMaxY() - areaToRemove.getMinY() + 1;
+
+    BooleanSupplier hasMask = () -> {
+      for (Pixel pixel : this) {
+        if (pixel.isMask()) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    Stack<Seam> seamStack = new Stack<>();
+
+    while (hasMask.getAsBoolean()) {
+      Seam seam;
+      //System.out.print(imageWidth + " " + imageHeight + "\n");
+      if (horzToRemove > vertToRemove) {
+        seam = findMinimumHorizontalSeam();
+        imageHeight -= 1;
+        horzToRemove -= 1;
+      }
+      else {
+        seam = findMinimumVerticalSeam();
+        imageWidth -= 1;
+        vertToRemove -= 1;
+      }
+      seam.remove();
+      //seamStack.push(seam);
+      storeCurrentState();
+    }
+
     resize(startingWidth, startingHeight);
+
+    boolean adjustmentVertical = false;
+    boolean adjustmentHorizontal = false;
+    System.out.print(seamStack.size() + "\n");
+    int i = 0;
+    while (!seamStack.empty()) {
+      System.out.print(imageWidth + " " + imageHeight + "\n");
+      Seam toAdd = seamStack.pop();
+      i += 1;
+      Coordinate[] coordinates = toAdd.getCoordinates();
+
+      if (toAdd.isVerticalSeam()) {
+        insertVerticalCoordinates(coordinates);
+      }
+      else {
+        insertHorizontalCoordinates(coordinates);
+      }
+    }
   }
 
   @Override
@@ -636,7 +725,9 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
   }
 
   private void storeCurrentState() {
-    previousStates.add(getCurrentImage());
+    if (record) {
+      previousStates.add(getCurrentImage());
+    }
   }
 
   @Override
@@ -665,6 +756,10 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
 
   @Override
   public void saveCurrentProcess(Path filePath) throws IOException {
+    if (!record) {
+      throw new IllegalArgumentException("This seam manipulator has been set not to record!");
+    }
+
     validFilePath(filePath.getParent());
     SeekableByteChannel out = null;
 

@@ -19,7 +19,7 @@ public class DefaultSeamAdjuster implements SeamAdjuster {
 
   private void inCoordinateRange(int toCheck) {
     if (toCheck < 0 || toCheck >= coordinateValuesLength) {
-      throw new IllegalArgumentException("Given index is out of the range of this SeamAdjuster [0, "
+      throw new IllegalArgumentException("Given index, " + Integer.toString(toCheck) + " is out of the range of this SeamAdjuster [0, "
           + Integer.toString(coordinateValuesLength - 1) + "]!");
     }
   }
