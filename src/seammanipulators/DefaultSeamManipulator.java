@@ -375,16 +375,6 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     }
 
     while (imageWidth < newWidth || imageHeight < newHeight) {
-      /*
-      if (imageWidth < newWidth && imageHeight < newHeight) {
-        Pixel copiedUpperLeftCorner = copyCurrentImage();
-        Seam verticalInsert = findMinimumVerticalSeam(copiedUpperLeftCorner);
-        Seam horizontalInsert = findMinimumHorizontalSeam(copiedUpperLeftCorner);
-        insertVerticalCoordinates(verticalInsert.getCoordinates());
-        insertHorizontalCoordinates(horizontalInsert.getCoordinates());
-      }
-      else
-      */
       if (imageWidth < newWidth) {
         Pixel copiedUpperLeftCorner = copyCurrentImage();
         int widthDifference = newWidth - imageWidth;
@@ -562,7 +552,6 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     else {
       imageHeight -= 1;
     }
-
     toRemove.remove();
     storeCurrentState();
   }
@@ -602,71 +591,16 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
         vertToRemove -= 1;
       }
       seam.remove();
-      previousStates.add(getCurrentImage());
+      storeCurrentState();
     }
   }
 
   @Override
   public void replaceArea(Mask areaToRemove) {
-    if (areaToRemove == null) {
-      throw new IllegalArgumentException("Given mask can't be null!");
-    }
-    applyMask(areaToRemove, -DefaultSeamManipulator.maskValue);
-
     int startingWidth = imageWidth;
     int startingHeight = imageHeight;
-
-    int horzToRemove = areaToRemove.getMaxX() - areaToRemove.getMinX() + 1;
-    int vertToRemove = areaToRemove.getMaxY() - areaToRemove.getMinY() + 1;
-
-    BooleanSupplier hasMask = () -> {
-      for (Pixel pixel : this) {
-        if (pixel.isMask()) {
-          return true;
-        }
-      }
-      return false;
-    };
-
-    Stack<Seam> seamStack = new Stack<>();
-
-    while (hasMask.getAsBoolean()) {
-      Seam seam;
-      //System.out.print(imageWidth + " " + imageHeight + "\n");
-      if (horzToRemove > vertToRemove) {
-        seam = findMinimumHorizontalSeam();
-        imageHeight -= 1;
-        horzToRemove -= 1;
-      }
-      else {
-        seam = findMinimumVerticalSeam();
-        imageWidth -= 1;
-        vertToRemove -= 1;
-      }
-      seam.remove();
-      //seamStack.push(seam);
-      storeCurrentState();
-    }
-
+    removeArea(areaToRemove);
     resize(startingWidth, startingHeight);
-
-    boolean adjustmentVertical = false;
-    boolean adjustmentHorizontal = false;
-    System.out.print(seamStack.size() + "\n");
-    int i = 0;
-    while (!seamStack.empty()) {
-      System.out.print(imageWidth + " " + imageHeight + "\n");
-      Seam toAdd = seamStack.pop();
-      i += 1;
-      Coordinate[] coordinates = toAdd.getCoordinates();
-
-      if (toAdd.isVerticalSeam()) {
-        insertVerticalCoordinates(coordinates);
-      }
-      else {
-        insertHorizontalCoordinates(coordinates);
-      }
-    }
   }
 
   @Override
