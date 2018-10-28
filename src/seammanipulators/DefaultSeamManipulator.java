@@ -4,7 +4,6 @@ import costmatricies.horizontal.HorizontalCostMatrix;
 import costmatricies.horizontal.HorizontalEnergy;
 import costmatricies.vertical.VerticalCostMatrix;
 import costmatricies.vertical.VerticalEnergy;
-import java.util.Stack;
 import utility.Coordinate;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
@@ -36,28 +35,79 @@ import seams.VerticalSeam;
 import utility.DefaultSeamAdjuster;
 import utility.SeamAdjuster;
 
+/**
+ * Default implementation of the SeamManipulator interface utilizing a custom matrix of individual
+ * "pixels" to manipulate a uploaded image.
+ */
 public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> {
 
+  /**
+   * Boolean determining whether or not to record the image being manipulated by storing every
+   * single iteration of the image.
+   */
   private final boolean record;
 
+  /**
+   * Dummy energy value to assign to Pixels are made apart of a mask. Must be very high as to avoid
+   * manipulation when seam carving occurs.
+   */
   private static final int maskValue = 5000;
 
+  /**
+   * List of every iteration of this image as it went through its process of being manipulated.
+   * Only used if {@code record} is true.
+   */
   List<BufferedImage> previousStates = new ArrayList<>();
 
+  /**
+   * Upper left corner of matrix of "pixels" used to represent the image being manipulated.
+   */
   private Pixel upperLeftCorner;
 
+  /**
+   * EnergyMapMaker to use when computing the energy of this image.
+   */
   private final EnergyMapMaker energyMapMaker;
 
+  /**
+   *
+   */
   private final int BufferedImageType;
 
+  /**
+   * Current width of the image.
+   */
   private int imageWidth;
 
+  /**
+   * Current height of the image.
+   */
   private int imageHeight;
 
+  /**
+   * Current maximum energy of this image's last computed energy map. Stored as a variable to use
+   * for computing the energy map as an image.
+   */
   private double maxEnergyMapEnergy;
 
+  /**
+   * Current maximum energy of this image's last computed cost matrix. Stored as a variable to use
+   * for computing the energy map as an image.
+   */
   private double maxCostMatrixEnergy;
 
+  /**
+   * Main constructor for this DefaultSeamManipulator, created using a file path to an image to
+   * manipulate, a energy map maker to use to compute the energy map of the image as it is
+   * manipulated, and a boolean to indicate whether or not to record the manipulation process of
+   * the image.
+   *
+   * @param inputFilePath file path to the image to manipulate
+   * @param energyMapMaker energy map function to use for computing the energy map of the inputted
+   *                       image
+   * @param record whether or not to record the image as it is being manipulated
+   * @throws IOException if the filepath to desired image fails to be read
+   */
   public DefaultSeamManipulator(Path inputFilePath, EnergyMapMaker energyMapMaker, boolean record) throws IOException {
      validFilePath(inputFilePath);
      this.record = record;
@@ -71,11 +121,20 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     BufferedImageType = loadedImage.getType();
     imageWidth = loadedImage.getWidth();
     imageHeight = loadedImage.getHeight();
-    upperLeftCorner = bufferedImageToPixel(loadedImage);
-    storeCurrentState();
+    upperLeftCorner = bufferedImageToPixel(loadedImage); // Convert image to pixel matrix
+                                                        // representation
+    storeCurrentState(); // Store starting state of the iamge.
   }
 
-  private Pixel bufferedImageToPixel(BufferedImage toConvert) {
+
+  /**
+   * Given a BufferedImage, converts it to a matrix of {@code Pixel}, given a reference to the
+   * upper left corner of the new matrix/
+   * @param toConvert image to convert to a Pixel matrix
+   * @return upper left pixel of the new matrix
+   * @throws IllegalArgumentException if {@code toConvert} is null
+   */
+  private Pixel bufferedImageToPixel(BufferedImage toConvert) throws IllegalArgumentException {
     if (toConvert == null) {
       throw new IllegalArgumentException("Given image can't be null!");
     }
@@ -105,12 +164,17 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     return tempImageArray[0][0];
   }
 
+  /**
+   * Copies the current pixel matrix of the manipulated image.
+   *
+   * @return reference to the upper left pixel of the copied matrix
+   */
   private Pixel copyCurrentImage() {
     return bufferedImageToPixel(getCurrentImage());
   }
 
   /**
-   * Checks if the given {@param filePath}  is both not null and does exist, else throws a corresponding
+   * Checks if the given {@param filePath} is both not null and does exist, else throws a corresponding
    * exception.
    *
    * @param filePath file path to check
@@ -126,7 +190,16 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     }
   }
 
-  private Pixel getPixel(int x, int y) {
+  /**
+   * Returns the Pixel at the given x and y coordinates in the {@code Pixel} matrix represented
+   * by {@code upperLeftCorner}.
+   * @param x x coordiante of the Pixel to retrieve
+   * @param y y coordinate of the Pixel to retrieve
+   * @return Pixel at the given x and y coordinates
+   * @throws IllegalArgumentException if given x and / or y coordiantes are out of the bounds of
+   *                                  manipulated image's current bounds.
+   */
+  private Pixel getPixel(int x, int y) throws IllegalArgumentException {
     if (x < 0 || x >= imageWidth) {
       throw new IllegalArgumentException("Given x coordinate must be in the bounds of the image!");
     }
@@ -151,7 +224,14 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     return toReturn;
   }
 
-  private void applyMask(Mask maskToApply, double valueToApply) {
+  /**
+   * Applies a given {@code Mask} to the manipulated image where each {@code Pixel} marked by the
+   * Mask is assigned the given {@param energyValue}.
+   * @param maskToApply Mask to apply
+   * @param energyValue new energy value to assign to Pixels in {@param maskToApply}
+   * @throws IllegalArgumentException if given mask is null
+   */
+  private void applyMask(Mask maskToApply, double energyValue) throws IllegalArgumentException {
     if (maskToApply == null) {
       throw new IllegalArgumentException("Given mask can't be null!");
     }
@@ -169,10 +249,15 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
       int currentX = coordinate.getX();
       int currentY = coordinate.getY();
       Pixel toChange = getPixel(currentX, currentY);
-      toChange.makeMask(valueToApply);
+      toChange.makeMask(energyValue);
     }
   }
 
+  /**
+   * Given a reference to the upper left corner of some {@code Pixel} matrix, computes it energy
+   * map as determined by {@code energyMapMaker}.
+   * @param upperLeftCorner upper left corner of matrix to work on
+   */
   private void computeEnergyMap(Pixel upperLeftCorner) {
     maxEnergyMapEnergy = 0;
     RowColumnIterator rowColumnIterator = new RowColumnIterator(upperLeftCorner);
@@ -658,6 +743,9 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     return toReturn;
   }
 
+  /**
+   * Whenever called, adds the current state to previous states.
+   */
   private void storeCurrentState() {
     if (record) {
       previousStates.add(getCurrentImage());
@@ -689,9 +777,9 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
   }
 
   @Override
-  public void saveCurrentProcess(Path filePath) throws IOException {
+  public void saveCurrentProcess(Path filePath) throws IOException, IllegalStateException {
     if (!record) {
-      throw new IllegalArgumentException("This seam manipulator has been set not to record!");
+      throw new IllegalStateException("This seam manipulator has been set not to record!");
     }
 
     validFilePath(filePath.getParent());
