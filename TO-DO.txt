@@ -1,7 +1,15 @@
--Get forward energy algorithms to work
--Optimal seam removal implementation
--More specific resize methods
--Cost matrix energies double -> int
+-Mask from image path
+-Checks to ensure mask being used is same size parameters of current image
 -Null checkers on helper methods
 -Redo insertion when resizing for new sizes > (2 * current size)
--Checks to ensure mask being used is same size parameters of current image
+-Image manipulator
+-Get arg parser up and running
+-Rename classes and interfaces
+-Get forward energy algorithms to work
+-Optimal seam removal implementation (see papers)
+-More specific resize methods
+-Cost matrix energies double -> int
+
+
+-Update readme with images and capabilities
+

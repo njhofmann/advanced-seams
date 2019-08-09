@@ -1,4 +1,4 @@
-package costmatricies.vertical;
+package cost_matricies.vertical;
 
 import pixel.Pixel;
 

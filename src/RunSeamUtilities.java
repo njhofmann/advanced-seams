@@ -1,13 +1,13 @@
-import energymaps.AverageSurroundingGradient;
-import energymaps.EnergyMapMaker;
+import energy_maps.AverageSurroundingGradient;
+import energy_maps.EnergyMapMaker;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import javax.imageio.ImageIO;
+
 import masks.DefaultMask;
 import masks.Mask;
-import seammanipulators.DefaultSeamManipulator;
-import seammanipulators.SeamManipulator;
+import seam_manipulators.DefaultSeamManipulator;
+import seam_manipulators.SeamManipulator;
 
 /**
  * Point of entry to run the SeamUtilities as a program.

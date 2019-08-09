@@ -1,6 +1,5 @@
-package costmatricies.vertical;
+package cost_matricies.vertical;
 
-import costmatricies.vertical.VerticalCostMatrix;
 import pixel.Pixel;
 
 public class VerticalForwardEnergy implements VerticalCostMatrix {

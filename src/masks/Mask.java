@@ -10,16 +10,32 @@ import utility.Coordinate;
 public interface Mask {
 
   /**
-   * Returns an array of all the coordinates that are apart of this masks.Mask.
+   * Returns an array of all the coordinates that are apart of this {@link Mask}.
    * @return array of all coordinates
    */
   Coordinate[] getCoordinates();
 
+  /**
+   * Return the "furthest" or "min" X coordinate present in this {@link Mask}.
+   * @return max X coordinate in this Mask
+   */
   int getMaxX();
 
+  /**
+   * Return the "closest" or "min" X coordinate present in this {@link Mask}.
+   * @return max X coordinate in this Mask
+   */
   int getMinX();
 
+  /**
+   * Return the "furthest" or "max" Y coordinate present in this {@link Mask}.
+   * @return max Y coordinate in this Mask
+   */
   int getMaxY();
 
+  /**
+   * Return the "closest" or "min" X coordinate present in this {@link Mask}.
+   * @return max Y coordinate in this Mask
+   */
   int getMinY();
 }

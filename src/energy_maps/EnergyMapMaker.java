@@ -1,4 +1,4 @@
-package energymaps;
+package energy_maps;
 
 import pixel.Pixel;
 

@@ -1,4 +1,4 @@
-package seammanipulators;
+package seam_manipulators;
 
 import java.awt.image.BufferedImage;
 import java.nio.file.Path;

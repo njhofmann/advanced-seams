@@ -1,4 +1,4 @@
-package energymaps;
+package energy_maps;
 
 import java.awt.Color;
 import pixel.Pixel;
@@ -32,6 +32,7 @@ public class AverageSurroundingGradient implements EnergyMapMaker {
       int blue = Math.abs(color.getBlue() - currentBlue);
       cumulativeDifference += (double)((red + green + blue) / 3);
     }
-    pixel.setEnergyMapEnergy(cumulativeDifference / 8);
+
+    pixel.setEnergyMapEnergy(cumulativeDifference / colors.length);
   }
 }

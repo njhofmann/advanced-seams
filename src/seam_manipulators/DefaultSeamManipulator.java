@@ -1,9 +1,9 @@
-package seammanipulators;
+package seam_manipulators;
 
-import costmatricies.horizontal.HorizontalCostMatrix;
-import costmatricies.horizontal.HorizontalEnergy;
-import costmatricies.vertical.VerticalCostMatrix;
-import costmatricies.vertical.VerticalEnergy;
+import cost_matricies.horizontal.HorizontalCostMatrix;
+import cost_matricies.horizontal.HorizontalEnergy;
+import cost_matricies.vertical.VerticalCostMatrix;
+import cost_matricies.vertical.VerticalEnergy;
 import utility.Coordinate;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
@@ -11,9 +11,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.function.BooleanSupplier;
 import javax.imageio.ImageIO;
 import masks.Mask;
@@ -27,7 +25,7 @@ import pixel.Pixel;
 import pixel.iterators.ColumnIterator;
 import pixel.iterators.ColumnRowIterator;
 import pixel.iterators.RowColumnIterator;
-import energymaps.EnergyMapMaker;
+import energy_maps.EnergyMapMaker;
 import pixel.iterators.RowIterator;
 import seams.HorizontalSeam;
 import seams.Seam;
@@ -36,8 +34,8 @@ import utility.DefaultSeamAdjuster;
 import utility.SeamAdjuster;
 
 /**
- * Default implementation of the SeamManipulator interface utilizing a custom matrix of individual
- * "pixels" to manipulate a uploaded image.
+ * Default implementation of the {@link SeamManipulator} interface utilizing a custom matrix of individual
+ * "pixels" to manipulate a uploaded image with various seam related operations.
  */
 public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> {
 
@@ -57,7 +55,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
    * List of every iteration of this image as it went through its process of being manipulated.
    * Only used if {@code record} is true.
    */
-  List<BufferedImage> previousStates = new ArrayList<>();
+  Deque<BufferedImage> previousStates = new LinkedList<>();
 
   /**
    * Upper left corner of matrix of "pixels" used to represent the image being manipulated.
@@ -70,7 +68,8 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
   private final EnergyMapMaker energyMapMaker;
 
   /**
-   *
+   * The type of image of the this {@link SeamManipulator} was given to work with. Also defines what type of image
+   * to save any resulting images as.
    */
   private final int BufferedImageType;
 
@@ -121,7 +120,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     BufferedImageType = loadedImage.getType();
     imageWidth = loadedImage.getWidth();
     imageHeight = loadedImage.getHeight();
-    upperLeftCorner = bufferedImageToPixel(loadedImage); // Convert image to pixel matrix
+    upperLeftCorner = bufferedImageToPixelMatrix(loadedImage); // Convert image to pixel matrix
                                                         // representation
     storeCurrentState(); // Store starting state of the iamge.
   }
@@ -134,7 +133,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
    * @return upper left pixel of the new matrix
    * @throws IllegalArgumentException if {@code toConvert} is null
    */
-  private Pixel bufferedImageToPixel(BufferedImage toConvert) throws IllegalArgumentException {
+  private Pixel bufferedImageToPixelMatrix(BufferedImage toConvert) throws IllegalArgumentException {
     if (toConvert == null) {
       throw new IllegalArgumentException("Given image can't be null!");
     }
@@ -170,7 +169,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
    * @return reference to the upper left pixel of the copied matrix
    */
   private Pixel copyCurrentImage() {
-    return bufferedImageToPixel(getCurrentImage());
+    return bufferedImageToPixelMatrix(getCurrentImage());
   }
 
   /**
@@ -785,8 +784,8 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     validFilePath(filePath.getParent());
     SeekableByteChannel out = null;
 
-    BufferedImage start = previousStates.get(0);
-    BufferedImage end = previousStates.get(previousStates.size() - 1);
+    BufferedImage start = previousStates.getFirst();
+    BufferedImage end = previousStates.getLast();
     int widthToUse = Math.max(start.getWidth(), end.getWidth());
     int heightToUse = Math.max(start.getHeight(), end.getHeight());
 
