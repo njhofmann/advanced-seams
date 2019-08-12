@@ -1,6 +1,9 @@
 package masks;
 
 import java.awt.Color;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import utility.Coordinate;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
@@ -11,22 +14,20 @@ import java.util.List;
 import javax.imageio.ImageIO;
 
 /**
- * The default Mask to use when making Masks.
+ * The default implementation of the {@link Mask} interface, defines a Mask by a given rectangular
+ * bounding box.
  */
 public class DefaultMask implements Mask {
 
-  private final int maxX;
-
-  private final int minX;
-
-  private final int maxY;
-
-  private final int minY;
+  /**
+   * The maximum and minimum X and Y coordinates that make up the bounding box of this {@link Mask}.
+   */
+  private final int maxX, minX, maxY, minY;
 
   /**
    * The array of Coordinates this Mask contains.
    */
-  private Coordinate[] coordinates;
+  private final Set<Coordinate> coordinates;
 
   /**
    * Constructor for this DefaultMask that assigns it all the coordinates within the bounds of a
@@ -48,7 +49,7 @@ public class DefaultMask implements Mask {
     }
     else if (upperLeftX >= lowerRightX) {
       throw new IllegalArgumentException("Given upper left x coordinate must be at least 1 unit"
-          + "less than the given lower right x coordiante!");
+          + "less than the given lower right x coordinate!");
     }
     else if (upperLeftY >= lowerRightY) {
       throw new IllegalArgumentException("Given upper left y coordinate must be at least 1 unit"
@@ -63,85 +64,20 @@ public class DefaultMask implements Mask {
     int xDist = lowerRightX - upperLeftX + 1;
     int yDist = lowerRightY - upperLeftY + 1;
 
-    coordinates = new Coordinate[xDist * yDist];
+    Set<Coordinate> tempCoordinates = new HashSet<>();
     int curArrayPosn = 0;
 
     for (int row = upperLeftY; row <= lowerRightY; row += 1) {
       for (int column = upperLeftX; column <= lowerRightX; column += 1) {
-        coordinates[curArrayPosn] = new Coordinate(column, row);
+        tempCoordinates.add(new Coordinate(column, row));
         curArrayPosn += 1;
       }
     }
+    coordinates = Collections.unmodifiableSet(tempCoordinates);
   }
-
-  /**
-   * Constructor for this DefaultMask that a takes in a file path for an image consisting of only
-   * white or black pixels - or pixels with colors (255, 255, 255) or (0, 0, 0) in the sRGB color
-   * space. Assigns all white pixels as this DefaultMask's associated coordinates.
-   *
-   * @param maskPath file path to the mask to use
-   * @throws IllegalArgumentException if given {@param maskPath} is null or doesn't exist, or if
-   *                                  one of its pixel's isn't exactly white or black
-   * @throws IOException if the path to the given image can't be read.
-   */
-  public DefaultMask(Path maskPath) throws IllegalArgumentException, IOException {
-    if (maskPath == null) {
-      throw new IllegalArgumentException("Given path can't be null!");
-    }
-    else if (Files.notExists(maskPath)) {
-      throw new IOException("Given path doesn't exist!");
-    }
-
-    int tempMaxX, tempMinX, tempMaxY, tempMinY;
-    BufferedImage toRead = ImageIO.read(maskPath.toFile());
-    List<Coordinate> tempCoors = new ArrayList<>();
-
-    tempMaxX = 0;
-    tempMaxY = 0;
-    tempMinX = toRead.getWidth() - 1;
-    tempMinY = toRead.getHeight() - 1;
-
-    for (int row = 0; row < toRead.getHeight(); row += 1) {
-      for (int column = 0; column < toRead.getWidth(); column += 1) {
-        Color currentColor = new Color(toRead.getRGB(column, row));
-
-        if (currentColor.equals(Color.WHITE)) {
-          tempCoors.add(new Coordinate(column, row));
-
-          if (column > tempMaxX) {
-            tempMaxX = column;
-          }
-          else if (column < tempMinX) {
-            tempMinX = column;
-          }
-
-          if (row > tempMaxY) {
-            tempMaxY = row;
-          }
-          else if (row < tempMinY) {
-            tempMinY = row;
-          }
-        }
-        /*
-        else if (!currentColor.equals(Color.BLACK)) {
-          throw new IllegalArgumentException("Given image can only contain exactly white or "
-              + "black pixels!");
-        }
-        */
-      }
-    }
-    coordinates = new Coordinate[tempCoors.size()];
-    coordinates = tempCoors.toArray(coordinates);
-
-    minX = tempMinX;
-    maxX = tempMaxX;
-    minY = tempMinY;
-    maxY = tempMaxY;
-  }
-
 
   @Override
-  public Coordinate[] getCoordinates() {
+  public Set<Coordinate> getCoordinates() {
     return coordinates;
   }
 

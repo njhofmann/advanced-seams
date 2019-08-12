@@ -49,7 +49,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
    * Dummy energy value to assign to Pixels are made apart of a mask. Must be very high as to avoid
    * manipulation when seam carving occurs.
    */
-  private static final int maskValue = 5000;
+  private static final int MaskValue = 5000;
 
   /**
    * List of every iteration of this image as it went through its process of being manipulated.
@@ -125,7 +125,6 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     storeCurrentState(); // Store starting state of the iamge.
   }
 
-
   /**
    * Given a BufferedImage, converts it to a matrix of {@code Pixel}, given a reference to the
    * upper left corner of the new matrix/
@@ -177,7 +176,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
    * exception.
    *
    * @param filePath file path to check
-   * @throws IllegalArgumentException if the given {@param filePath}  is null
+   * @throws IllegalArgumentException if the given {@param filePath}  is null or was not found
    * @throws IOException if the given {@param filePath} does not exist
    */
   private void validFilePath(Path filePath) throws IllegalArgumentException, FileNotFoundException {
@@ -185,7 +184,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
       throw new IllegalArgumentException("Given file path can't be null!");
     }
     else if (Files.notExists(filePath)) {
-      throw new FileNotFoundException("Given file path does not exist!");
+      throw new IllegalArgumentException("Given file path does not exist!");
     }
   }
 
@@ -224,7 +223,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
   }
 
   /**
-   * Applies a given {@code Mask} to the manipulated image where each {@code Pixel} marked by the
+   * Applies a given {@link Mask} to the manipulated image where each {@link Pixel} marked by the
    * Mask is assigned the given {@param energyValue}.
    * @param maskToApply Mask to apply
    * @param energyValue new energy value to assign to Pixels in {@param maskToApply}
@@ -243,7 +242,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
           + "current height!");
     }
 
-    Coordinate[] coordinates = maskToApply.getCoordinates();
+    Set<Coordinate> coordinates = maskToApply.getCoordinates();
     for (Coordinate coordinate : coordinates) {
       int currentX = coordinate.getX();
       int currentY = coordinate.getY();
@@ -253,7 +252,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
   }
 
   /**
-   * Given a reference to the upper left corner of some {@code Pixel} matrix, computes it energy
+   * Given a reference to the upper left corner of some {@link Pixel} matrix, computes it energy
    * map as determined by {@code energyMapMaker}.
    * @param upperLeftCorner upper left corner of matrix to work on
    */
@@ -282,12 +281,15 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
         costMatrix.compute(currentPixel);
       }
 
-      if (currentPixel.getCostMatrixEnergy() > maxCostMatrixEnergy) {
-        maxCostMatrixEnergy = currentPixel.getCostMatrixEnergy();
-      }
+      maxCostMatrixEnergy = Math.max(maxCostMatrixEnergy, currentPixel.getCostMatrixEnergy());
     }
   }
 
+  /**
+   * Finds vertical {@link Seam} with least amount of energy to from the image in its current state.
+   * @param upperLeftCorner upper left corner {@link Pixel} of the image
+   * @return vertical Seam with minimum energy
+   */
   private Seam findMinimumVerticalSeam(Pixel upperLeftCorner) {
     computeEnergyMap(upperLeftCorner);
     computeVerticalCostMatrix(new VerticalEnergy(), upperLeftCorner);
@@ -345,6 +347,10 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     return currentSeam;
   }
 
+  /**
+   * Finds vertical {@link Seam} with least amount of energy to from the image in its current state.
+   * @return vertical Seam with minimum energy
+   */
   private Seam findMinimumVerticalSeam() {
     return findMinimumVerticalSeam(upperLeftCorner);
   }
@@ -362,12 +368,15 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
         costMatrix.compute(currentPixel);
       }
 
-      if (currentPixel.getCostMatrixEnergy() > maxCostMatrixEnergy) {
-        maxCostMatrixEnergy = currentPixel.getCostMatrixEnergy();
-      }
+      maxCostMatrixEnergy = Math.max(maxCostMatrixEnergy, currentPixel.getCostMatrixEnergy());
     }
   }
 
+  /**
+   * Finds horizontal {@link Seam} with least amount of energy to from the image in its current state.
+   * @param upperLeftCorner upper left corner {@link Pixel} of the image
+   * @return horizontal Seam with minimum energy
+   */
   private Seam findMinimumHorizontalSeam(Pixel upperLeftCorner) {
     computeEnergyMap(upperLeftCorner);
     computeHorizontalCostMatrix(new HorizontalEnergy(), upperLeftCorner);
@@ -424,20 +433,23 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     return seam;
   }
 
+  /**
+   * Finds horizontal {@link Seam} with least amount of energy to from the image in its current state.
+   * @return horizontal Seam with minimum energy
+   */
   private Seam findMinimumHorizontalSeam() {
     return findMinimumHorizontalSeam(upperLeftCorner);
   }
 
   @Override
   public void resize(int newWidth, int newHeight) {
-    if (newWidth < 1) {
-      throw new IllegalArgumentException("Given new width can't be less than 1 pixel");
-    }
-    else if (newHeight < 1) {
-      throw new IllegalArgumentException("Given new width can't be less than 1 pixel");
+    if (newWidth < 1 || newHeight < 1) {
+      throw new IllegalArgumentException("Given new width or new height can't be less than 1!");
     }
 
-    // Downsize then upsize
+    // Downsize first
+    boolean canPruneWidth = imageWidth > newWidth;
+    boolean canPruneHeight = imageHeight > newHeight;
     while (imageWidth > newWidth || imageHeight > newHeight) {
       if (imageWidth > newWidth && imageHeight > newHeight) {
         // Remove which ever seam removes less average energy
@@ -453,11 +465,12 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
       else if (imageWidth > newWidth) {
         removeSeam(findMinimumVerticalSeam());
       }
-      else if (imageHeight > newHeight) {
+      else {
         removeSeam(findMinimumHorizontalSeam());
       }
     }
 
+    // TODO better reinsertion
     while (imageWidth < newWidth || imageHeight < newHeight) {
       if (imageWidth < newWidth) {
         Pixel copiedUpperLeftCorner = copyCurrentImage();
@@ -490,7 +503,16 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     }
   }
 
+  /**
+   * Vertically inserts the given {@link Coordinate}s in the image as it is currently stored.
+   * @param coordinatesToAdd coordinates to add
+   * @throws IllegalArgumentException if given coordinates are null or empty
+   */
   private void insertVerticalCoordinates(Coordinate[]... coordinatesToAdd) {
+    if (coordinatesToAdd == null || coordinatesToAdd.length < 1) {
+      throw new IllegalArgumentException("Given collection of coordinates can't be null or empty!");
+    }
+
     SeamAdjuster upscalingSeamAdjuster = new DefaultSeamAdjuster(imageWidth);
     for (Coordinate[] coordinates : coordinatesToAdd) {
       if (coordinatesToAdd.length > 1) {
@@ -553,11 +575,16 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
         prevRight = currentRight;
         previousX = x;
       }
-      imageWidth += 1;
+      imageWidth++;
       storeCurrentState();
     }
   }
 
+  /**
+   * Horizontally inserts the given {@link Coordinate}s in the image as it is currently stored.
+   * @param coordinatesToAdd coordinates to add
+   * @throws IllegalArgumentException if given coordinates are null or empty
+   */
   private void insertHorizontalCoordinates(Coordinate[]... coordinatesToAdd) {
     SeamAdjuster upscalingSeamAdjuster = new DefaultSeamAdjuster(imageHeight);
     for (Coordinate[] coordinates : coordinatesToAdd) {
@@ -626,15 +653,20 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     }
   }
 
+  /**
+   * Removes the given {@link Seam} from the currently stored image.
+   * @param toRemove Seam to remove
+   * @throws IllegalArgumentException if given seam is null
+   */
   private void removeSeam(Seam toRemove) {
     if (toRemove == null) {
       throw new IllegalArgumentException("Given seam can't be null!");
     }
     else if (toRemove.isVerticalSeam()) {
-      imageWidth -= 1;
+      imageWidth--;
     }
     else {
-      imageHeight -= 1;
+      imageHeight--;
     }
     toRemove.remove();
     storeCurrentState();
@@ -642,13 +674,13 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
 
   @Override
   public void resize(int newWidth, int newHeight, Mask areaToProtect) {
-    applyMask(areaToProtect, DefaultSeamManipulator.maskValue);
+    applyMask(areaToProtect, DefaultSeamManipulator.MaskValue);
     resize(newWidth, newHeight);
   }
 
   @Override
   public void removeArea(Mask areaToRemove) {
-    applyMask(areaToRemove, -DefaultSeamManipulator.maskValue);
+    applyMask(areaToRemove, -DefaultSeamManipulator.MaskValue);
 
     int horzToRemove = areaToRemove.getMaxX() - areaToRemove.getMinX() + 1;
     int vertToRemove = areaToRemove.getMaxY() - areaToRemove.getMinY() + 1;

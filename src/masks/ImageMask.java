@@ -1,16 +1,13 @@
 package masks;
 
+import java.awt.Color;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Set;
 import javax.imageio.ImageIO;
-import pixel.Pixel;
 import utility.Coordinate;
 import java.nio.file.Path;
 
@@ -30,7 +27,7 @@ public class ImageMask implements Mask {
 
   private final Set<Coordinate> coordinates;
 
-  private final int maxX, maxY, maxY, minY;
+  private final int maxX, maxY, minX, minY;
 
   public ImageMask(Path toMask) throws IllegalArgumentException, IOException {
     if (toMask == null) {
@@ -40,45 +37,78 @@ public class ImageMask implements Mask {
       throw new IllegalArgumentException("Given path to mask doesn't exist!");
     }
 
+    int mockMaxX = Integer.MIN_VALUE;
+    int mockMaxY = Integer.MIN_VALUE;
+    int mockMinX = Integer.MAX_VALUE;
+    int mockMinY = Integer.MAX_VALUE;
     Set<Coordinate> mockSet = new HashSet<>();
     BufferedImage maskImage = ImageIO.read(toMask.toFile());
     for (int row = 0; row < maskImage.getHeight(); row++) {
       for (int col = 0; col < maskImage.getWidth(); col++) {
-        int currentRGB = maskImage.getRGB(col, row); // TODO how to decipher
+        Color currentColor = new Color(maskImage.getRGB(col, row));
+        if (pixelIsWhite(currentColor)) {
+          mockSet.add(new Coordinate(col, row));
+          mockMaxX = Math.max(mockMaxX, col);
+          mockMaxY = Math.max(mockMaxY, row);
+          mockMinX = Math.min(mockMinX, col);
+          mockMinY = Math.min(mockMinY, row);
+        }
       }
     }
+    maxX = mockMaxX;
+    maxY = mockMaxY;
+    minX = mockMinX;
+    minY = mockMinY;
     coordinates = Collections.unmodifiableSet(mockSet);
   }
 
-  private boolean pixelIsWhite(int red, int green, int blue) {
-    return inThreshold(red) && inThreshold(green) && inThreshold(blue);
+
+  /**
+   * Returns if the given {@link Color} is "close enough" to white to be added to this mask's set
+   * of {@link Coordinate}s.
+   * @param color color to test
+   * @return if Color is close enough to white
+   * @throws IllegalArgumentException if given Color is null
+   */
+  private boolean pixelIsWhite(Color color) {
+    if (color == null) {
+      throw new IllegalArgumentException("Given color can't be null!");
+    }
+    return inThreshold(color.getRed()) && inThreshold(color.getGreen()) && inThreshold(color.getBlue());
   }
 
-  private boolean inThreshold(int code) {
-    return MinRGBThreshold <= code && code <= MaxRGBThreshold
+  /**
+   * Returns if the given band of that makes up a color is within the denoted thresholds for what
+   * makes a color "white".
+   * @param band band of color to check
+   * @return if band is in threshold
+   */
+  private boolean inThreshold(int band) {
+    return MinRGBThreshold <= band && band <= MaxRGBThreshold;
   }
 
-  public Coordinate[] getCoordinates() {
+  @Override
+  public Set<Coordinate> getCoordinates() {
     return coordinates;
   }
 
   @Override
   public int getMaxX() {
-    return 0;
+    return maxX;
   }
 
-  @java.lang.Override
+  @Override
   public int getMinX() {
-    return 0;
+    return minX;
   }
 
-  @java.lang.Override
+  @Override
   public int getMaxY() {
-    return 0;
+    return maxY;
   }
 
-  @java.lang.Override
+  @Override
   public int getMinY() {
-    return 0;
+    return minY;
   }
 }
