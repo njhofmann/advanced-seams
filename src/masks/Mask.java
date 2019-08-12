@@ -1,5 +1,6 @@
 package masks;
 
+import java.util.Set;
 import utility.Coordinate;
 
 /**
@@ -11,9 +12,9 @@ public interface Mask {
 
   /**
    * Returns an array of all the coordinates that are apart of this {@link Mask}.
-   * @return array of all coordinates
+   * @return set of all coordinates
    */
-  Coordinate[] getCoordinates();
+  Set<Coordinate> getCoordinates();
 
   /**
    * Return the "furthest" or "min" X coordinate present in this {@link Mask}.
