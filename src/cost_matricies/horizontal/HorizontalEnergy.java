@@ -1,8 +1,14 @@
 package cost_matricies.horizontal;
 
+import cost_matricies.BaseCostMatrixProcessor;
+import cost_matricies.CostMatrixProcessor;
 import pixel.Pixel;
 
-public class HorizontalEnergy implements HorizontalCostMatrix {
+public class HorizontalEnergy extends BaseCostMatrixProcessor implements CostMatrixProcessor {
+
+  public HorizontalEnergy() {
+    super(true);
+  }
 
   @Override
   public void compute(Pixel pixel) {

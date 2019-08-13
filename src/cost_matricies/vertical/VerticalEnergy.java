@@ -1,8 +1,15 @@
 package cost_matricies.vertical;
 
+import cost_matricies.BaseCostMatrixProcessor;
+import cost_matricies.CostMatrixProcessor;
+import java.util.LinkedList;
 import pixel.Pixel;
 
-public class VerticalEnergy implements VerticalCostMatrix {
+public class VerticalEnergy extends BaseCostMatrixProcessor implements CostMatrixProcessor {
+
+  public VerticalEnergy() {
+    super(false);
+  }
 
   @Override
   public void compute(Pixel pixel) {
@@ -17,7 +24,7 @@ public class VerticalEnergy implements VerticalCostMatrix {
     double upperCenterEnergy = pixel.getAbovePixel().getCostMatrixEnergy();
     double upperRightEnergy = pixel.getUpperRightPixel().getCostMatrixEnergy();
 
-    pixel.setCostMatrixEnergy(pixel.getEnergyMapEnergy() + Math.min(upperLeftEnergy,
-        Math.min(upperCenterEnergy, upperRightEnergy)));
+    pixel.setCostMatrixEnergy(pixel.getEnergyMapEnergy() +
+        Math.min(upperLeftEnergy, Math.min(upperCenterEnergy, upperRightEnergy)));
   }
 }

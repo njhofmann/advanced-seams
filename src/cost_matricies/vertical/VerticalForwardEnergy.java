@@ -1,8 +1,14 @@
 package cost_matricies.vertical;
 
+import cost_matricies.BaseCostMatrixProcessor;
+import cost_matricies.CostMatrixProcessor;
 import pixel.Pixel;
 
-public class VerticalForwardEnergy implements VerticalCostMatrix {
+public class VerticalForwardEnergy extends BaseCostMatrixProcessor implements CostMatrixProcessor {
+
+  public VerticalForwardEnergy() {
+    super(false);
+  }
 
   @Override
   public void compute(Pixel pixel) {
