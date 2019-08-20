@@ -1,6 +1,9 @@
 package pixel.iterators;
 
-public interface CoordinateTracker {
+import java.util.Iterator;
+import pixel.Pixel;
+
+public interface CoordinateTracker extends Iterator<Pixel> {
 
   int getX();
 

@@ -1,9 +1,8 @@
 package seam_manipulators;
 
-import cost_matricies.horizontal.HorizontalCostMatrix;
-import cost_matricies.horizontal.HorizontalEnergy;
-import cost_matricies.vertical.VerticalCostMatrix;
-import cost_matricies.vertical.VerticalEnergy;
+import cost_matricies.CostMatrixProcessor;
+import cost_matricies.EnergizedProcessor;
+import pixel.iterators.CoordinateTracker;
 import utility.Coordinate;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
@@ -268,21 +267,34 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     }
   }
 
-  private void computeVerticalCostMatrix(VerticalCostMatrix costMatrix, Pixel upperLeftCorner) {
+  private void computeCostMatrix(Pixel upperLeftCorner, CostMatrixProcessor costMatrix,
+      boolean computeHorizontally) {
     maxCostMatrixEnergy = 0;
-    RowColumnIterator rowColumnIterator = new RowColumnIterator(upperLeftCorner);
-    while (rowColumnIterator.hasNext()) {
-      int currentY = rowColumnIterator.getY();
-      Pixel currentPixel = rowColumnIterator.next();
-      if (currentY == 0) {
+
+    CoordinateTracker pixelIterator = computeHorizontally ?
+        new ColumnRowIterator(upperLeftCorner) :
+        new RowColumnIterator(upperLeftCorner);
+
+    while (pixelIterator.hasNext()) {
+      Pixel currentPixel = pixelIterator.next();
+
+      if ((computeHorizontally && pixelIterator.getX() == 0) ||
+          (!computeHorizontally && pixelIterator.getY() == 0)) {
         currentPixel.setCostMatrixEnergy(currentPixel.getEnergyMapEnergy());
       }
+      else if (computeHorizontally) {
+        costMatrix.computeHorizontally(currentPixel);
+      }
       else {
-        costMatrix.compute(currentPixel);
+        costMatrix.computeVertically(currentPixel);
       }
 
       maxCostMatrixEnergy = Math.max(maxCostMatrixEnergy, currentPixel.getCostMatrixEnergy());
     }
+  }
+
+  private void computeVerticalCostMatrix(CostMatrixProcessor costMatrix, Pixel upperLeftCorner) {
+    computeCostMatrix(upperLeftCorner, costMatrix, false);
   }
 
   /**
@@ -292,7 +304,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
    */
   private Seam findMinimumVerticalSeam(Pixel upperLeftCorner) {
     computeEnergyMap(upperLeftCorner);
-    computeVerticalCostMatrix(new VerticalEnergy(), upperLeftCorner);
+    computeVerticalCostMatrix(new EnergizedProcessor(), upperLeftCorner);
 
     int currentX = -1;
     int currentY = -1;
@@ -355,21 +367,8 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     return findMinimumVerticalSeam(upperLeftCorner);
   }
 
-  private void computeHorizontalCostMatrix(HorizontalCostMatrix costMatrix, Pixel upperLeftCorner) {
-    maxCostMatrixEnergy = 0;
-    ColumnRowIterator columnRowIterator = new ColumnRowIterator(upperLeftCorner);
-    while (columnRowIterator.hasNext()) {
-      int currentX = columnRowIterator.getX();
-      Pixel currentPixel = columnRowIterator.next();
-      if (currentX == 0) {
-        currentPixel.setCostMatrixEnergy(currentPixel.getEnergyMapEnergy());
-      }
-      else {
-        costMatrix.compute(currentPixel);
-      }
-
-      maxCostMatrixEnergy = Math.max(maxCostMatrixEnergy, currentPixel.getCostMatrixEnergy());
-    }
+  private void computeHorizontalCostMatrix(CostMatrixProcessor costMatrix, Pixel upperLeftCorner) {
+    computeCostMatrix(upperLeftCorner, costMatrix, true);
   }
 
   /**
@@ -379,7 +378,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
    */
   private Seam findMinimumHorizontalSeam(Pixel upperLeftCorner) {
     computeEnergyMap(upperLeftCorner);
-    computeHorizontalCostMatrix(new HorizontalEnergy(), upperLeftCorner);
+    computeHorizontalCostMatrix(new EnergizedProcessor(), upperLeftCorner);
 
     int currentX = -1;
     int currentY = -1;
@@ -756,7 +755,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
   @Override
   public BufferedImage getCurrentCostMatrix() {
     computeEnergyMap(upperLeftCorner);
-    computeHorizontalCostMatrix(new HorizontalEnergy(), upperLeftCorner);
+    computeHorizontalCostMatrix(new EnergizedProcessor(), upperLeftCorner);
     RowColumnIterator rowColumnIterator = new RowColumnIterator(upperLeftCorner);
     BufferedImage toReturn = new BufferedImage(imageWidth, imageHeight, BufferedImageType);
     while (rowColumnIterator.hasNext()) {
