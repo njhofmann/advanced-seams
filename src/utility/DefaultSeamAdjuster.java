@@ -63,13 +63,13 @@ public class DefaultSeamAdjuster implements SeamAdjuster {
   }
 
   @Override
-  public void adjustCoordinatesByXInclusive(Coordinate[] toAdjust) {
+  public void adjustByXInclusive(Coordinate[] toAdjust) {
     int adjustmentStart = adjustCoordinatesByX(toAdjust);
     addValueTo(adjustmentStart);
   }
 
   @Override
-  public void adjustCoordinatesByXExclusive(Coordinate[] toAdjust) {
+  public void adjustByXExclusive(Coordinate[] toAdjust) {
     int adjustmentStart = adjustCoordinatesByX(toAdjust);
     addValueTo(adjustmentStart + 1);
   }
@@ -92,13 +92,13 @@ public class DefaultSeamAdjuster implements SeamAdjuster {
   }
 
   @Override
-  public void adjustCoordinatesByYInclusive(Coordinate[] toAdjust) {
+  public void adjustByYInclusive(Coordinate[] toAdjust) {
     int adjustmentStart = adjustCoordinatesByY(toAdjust);
     addValueTo(adjustmentStart);
   }
 
   @Override
-  public void adjustCoordinatesByYExclusive(Coordinate[] toAdjust) {
+  public void adjustByYExclusive(Coordinate[] toAdjust) {
     int adjustmentStart = adjustCoordinatesByY(toAdjust);
     addValueTo(adjustmentStart + 1);
   }

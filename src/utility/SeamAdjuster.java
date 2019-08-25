@@ -2,12 +2,11 @@ package utility;
 
 public interface SeamAdjuster {
 
-  void adjustCoordinatesByXInclusive(Coordinate[] toAdjust);
+  void adjustByXInclusive(Coordinate[] toAdjust);
 
-  void adjustCoordinatesByXExclusive(Coordinate[] toAdjust);
+  void adjustByXExclusive(Coordinate[] toAdjust);
 
-  void adjustCoordinatesByYInclusive(Coordinate[] toAdjust);
+  void adjustByYInclusive(Coordinate[] toAdjust);
 
-  void adjustCoordinatesByYExclusive(Coordinate[] toAdjust);
-
+  void adjustByYExclusive(Coordinate[] toAdjust);
 }

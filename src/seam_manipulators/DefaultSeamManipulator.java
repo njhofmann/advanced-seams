@@ -99,7 +99,6 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
    * manipulate, a energy map maker to use to compute the energy map of the image as it is
    * manipulated, and a boolean to indicate whether or not to record the manipulation process of
    * the image.
-   *
    * @param inputFilePath file path to the image to manipulate
    * @param energyMapMaker energy map function to use for computing the energy map of the inputted
    *                       image
@@ -173,17 +172,20 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
   /**
    * Checks if the given {@param filePath} is both not null and does exist, else throws a corresponding
    * exception.
-   *
    * @param filePath file path to check
    * @throws IllegalArgumentException if the given {@param filePath}  is null or was not found
    * @throws IOException if the given {@param filePath} does not exist
    */
   private void validFilePath(Path filePath) throws IllegalArgumentException, FileNotFoundException {
+    nullFilePath(filePath);
+    if (Files.notExists(filePath)) {
+      throw new IllegalArgumentException("Given file path does not exist!");
+    }
+  }
+
+  private void nullFilePath(Path filePath) {
     if (filePath == null) {
       throw new IllegalArgumentException("Given file path can't be null!");
-    }
-    else if (Files.notExists(filePath)) {
-      throw new IllegalArgumentException("Given file path does not exist!");
     }
   }
 
@@ -480,7 +482,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
           Seam toAdd = findMinimumVerticalSeam(copiedUpperLeftCorner);
           toAdd.remove();
           Coordinate[] currentCoordinates = toAdd.getCoordinates();
-          removalSeamAdjuster.adjustCoordinatesByXInclusive(currentCoordinates);
+          removalSeamAdjuster.adjustByXInclusive(currentCoordinates);
           coordinatesToAdd[i] = currentCoordinates;
         }
         insertVerticalCoordinates(coordinatesToAdd);
@@ -494,7 +496,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
           Seam toAdd = findMinimumHorizontalSeam(copiedUpperLeftCorner);
           toAdd.remove();
           Coordinate[] currentCoordinate = toAdd.getCoordinates();
-          removalSeamAdjuster.adjustCoordinatesByYInclusive(currentCoordinate);
+          removalSeamAdjuster.adjustByYInclusive(currentCoordinate);
           coordinatesToAdd[i] = currentCoordinate;
         }
         insertHorizontalCoordinates(coordinatesToAdd);
@@ -515,7 +517,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     SeamAdjuster upscalingSeamAdjuster = new DefaultSeamAdjuster(imageWidth);
     for (Coordinate[] coordinates : coordinatesToAdd) {
       if (coordinatesToAdd.length > 1) {
-        upscalingSeamAdjuster.adjustCoordinatesByXExclusive(coordinates);
+        upscalingSeamAdjuster.adjustByXExclusive(coordinates);
       }
 
       Pixel prevLeft = new BorderPixel();
@@ -588,7 +590,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     SeamAdjuster upscalingSeamAdjuster = new DefaultSeamAdjuster(imageHeight);
     for (Coordinate[] coordinates : coordinatesToAdd) {
       if (coordinatesToAdd.length > 1) {
-        upscalingSeamAdjuster.adjustCoordinatesByYExclusive(coordinates);
+        upscalingSeamAdjuster.adjustByYExclusive(coordinates);
       }
 
       Pixel prevAbove = new BorderPixel();
@@ -784,7 +786,11 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
 
   @Override
   public void saveCurrentImage(Path filePath) throws IOException {
+    nullFilePath(filePath);
     validFilePath(filePath.getParent());
+    if (Files.exists(filePath)) {
+      throw new IllegalArgumentException("Given file path can't point to existing file!");
+    }
     ImageIO.write(getCurrentImage(), "png", filePath.toFile());
   }
 

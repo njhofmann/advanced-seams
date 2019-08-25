@@ -4,13 +4,14 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import utility.Coordinate;
 import pixel.Pixel;
 
 public abstract class AbstractSeam implements Seam {
 
-  protected final List<Pixel> pixels = new ArrayList<>();
+  protected final List<Pixel> pixels = new LinkedList<>();
 
   protected double totalEnergy = 0;
 
