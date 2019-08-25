@@ -95,6 +95,12 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
   private double maxCostMatrixEnergy;
 
   /**
+   * {@link CostMatrixProcessor} to use for creating the cost matrix for this
+   * {@link SeamManipulator}'s current image.
+   */
+  private final CostMatrixProcessor costMatrixProcessor;
+
+  /**
    * Main constructor for this DefaultSeamManipulator, created using a file path to an image to
    * manipulate, a energy map maker to use to compute the energy map of the image as it is
    * manipulated, and a boolean to indicate whether or not to record the manipulation process of
@@ -105,7 +111,8 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
    * @param record whether or not to record the image as it is being manipulated
    * @throws IOException if the filepath to desired image fails to be read
    */
-  public DefaultSeamManipulator(Path inputFilePath, EnergyMapMaker energyMapMaker, boolean record) throws IOException {
+  public DefaultSeamManipulator(Path inputFilePath, EnergyMapMaker energyMapMaker,
+      CostMatrixProcessor costMatrixProcessor, boolean record) throws IOException {
      validFilePath(inputFilePath);
      this.record = record;
 
@@ -113,6 +120,11 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
       throw new IllegalArgumentException("Given energy map can't be null!");
     }
     this.energyMapMaker = energyMapMaker;
+
+    if (costMatrixProcessor == null) {
+      throw new IllegalArgumentException("Given cost matrix processor can't be null!");
+    }
+    this.costMatrixProcessor = costMatrixProcessor;
 
     BufferedImage loadedImage = ImageIO.read(inputFilePath.toFile());
     BufferedImageType = loadedImage.getType();
