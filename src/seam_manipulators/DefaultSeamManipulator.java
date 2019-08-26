@@ -188,7 +188,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
    * @throws IllegalArgumentException if the given {@param filePath}  is null or was not found
    * @throws IOException if the given {@param filePath} does not exist
    */
-  private void validFilePath(Path filePath) throws IllegalArgumentException, FileNotFoundException {
+  private void validFilePath(Path filePath) throws IllegalArgumentException {
     nullFilePath(filePath);
     if (Files.notExists(filePath)) {
       throw new IllegalArgumentException("Given file path does not exist!");
@@ -198,6 +198,14 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
   private void nullFilePath(Path filePath) {
     if (filePath == null) {
       throw new IllegalArgumentException("Given file path can't be null!");
+    }
+  }
+
+  private void validSaveFilePath(Path filePath) {
+    nullFilePath(filePath);
+    validFilePath(filePath.getParent());
+    if (Files.exists(filePath)) {
+      throw new IllegalArgumentException("Given file path can't point to existing file!");
     }
   }
 
@@ -798,11 +806,7 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
 
   @Override
   public void saveCurrentImage(Path filePath) throws IOException {
-    nullFilePath(filePath);
-    validFilePath(filePath.getParent());
-    if (Files.exists(filePath)) {
-      throw new IllegalArgumentException("Given file path can't point to existing file!");
-    }
+    validSaveFilePath(filePath);
     ImageIO.write(getCurrentImage(), "png", filePath.toFile());
   }
 
@@ -829,8 +833,8 @@ public class DefaultSeamManipulator implements SeamManipulator, Iterable<Pixel> 
     if (!record) {
       throw new IllegalStateException("This seam manipulator has been set not to record!");
     }
+    validSaveFilePath(filePath);
 
-    validFilePath(filePath.getParent());
     SeekableByteChannel out = null;
 
     BufferedImage start = previousStates.getFirst();

@@ -79,7 +79,8 @@ public interface SeamManipulator {
    * Saves the manipulation process of the uploaded image so far to the given file path as a JPEG.
    * @param filePath file path to save video to
    * @throws IOException if video fails to save to given file path
-   * @throws IllegalStateException if the SeamManipulator has been set to not record video
+   * @throws IllegalStateException if the SeamManipulator has been set to not record video, or given
+   * path points to existing file, or if parent directory of given path doesn't exist
    */
   void saveCurrentProcess(Path filePath) throws IOException, IllegalStateException;
 }
