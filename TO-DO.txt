@@ -1,5 +1,6 @@
 -Get arg parser up and running
   -Docs
+  -TestSM implementation
   -Tests
   -Informative exceptions
 -Working forward energy algorithms

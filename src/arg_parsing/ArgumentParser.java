@@ -1,3 +1,5 @@
+package arg_parsing;
+
 import cost_matricies.CostMatrixProcessor;
 import cost_matricies.EnergizedProcessor;
 import cost_matricies.ForwardEnergizedProcessor;
@@ -26,7 +28,7 @@ public class ArgumentParser {
 
   /**
    * "Seam operations" that a user can perform on a image. User is allowed to only select one of
-   * operations.
+   * these operations.
    */
   private static final Set<String> SeamOperations = Arrays.
       stream(new String[]{"remove", "replace", "resize"}).collect(
@@ -38,6 +40,24 @@ public class ArgumentParser {
   private static final Set<String> AllowedOptionalArgs = Arrays.
       stream(new String[]{"record", "cost", "protect"}).collect(
       Collectors.toSet());
+
+  /**
+   * {@link SeamManipulatorFactory} this {@link ArgumentParser} used for creating
+   * {@link SeamManipulator}s it uses to carry out user entered seam carving details on.
+    */
+  private final SeamManipulatorFactory factory;
+
+  /**
+   * Creates a {@link ArgumentParser} which carries out user specified seam carving operations
+   * on the {@link SeamManipulator}s created by the given {@link SeamManipulatorFactory}.
+   * @param factory factory for creating SeamManipulators to work on
+   */
+  public ArgumentParser(SeamManipulatorFactory factory) {
+    if (factory == null) {
+      throw new IllegalArgumentException("Given seam manipulator factory can't be null!");
+    }
+    this.factory = factory;
+  }
 
   /**
    * Given a array of user entered arguments, parses them to allow a user to carry out a "seam
@@ -99,9 +119,10 @@ public class ArgumentParser {
     boolean record = recordArgumentIncluded(flagCollector);
 
     // Create seam manipulator
-    SeamManipulator seamManipulator = new DefaultSeamManipulator(inputPath,
+    SeamManipulator seamManipulator = factory.create(inputPath,
         new AverageSurroundingGradient(),
-        costMatrixProcessor, record);
+        costMatrixProcessor,
+        record);
 
     executeSeamOperation(seamManipulator, flagCollector);
 
